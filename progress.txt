@@ -26,3 +26,16 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Next.js 16 shows deprecation warning about "middleware" → "proxy" convention (non-blocking)
   - Codex model is `gpt-5.3-codex` (not `gpt-5.3-codex-xhigh` — that variant not available on ChatGPT accounts)
 ---
+
+## 2026-02-27T13:16:00Z - US-002: Database migration to Neon
+- Added db:generate, db:push, db:studio scripts to package.json
+- Updated drizzle.config.ts to auto-load .env.local via dotenv.config()
+- Confirmed schema push to Neon: tables users, data_connections, synced_projects exist
+- `npm run db:push` now works standalone (no manual env sourcing needed)
+- Files changed: package.json, drizzle.config.ts
+- **Learnings for future iterations:**
+  - drizzle-kit 0.31 does NOT have built-in envFile support in config
+  - Must explicitly load .env.local via `dotenv.config({ path: ".env.local" })` in drizzle.config.ts
+  - `npm run` does NOT auto-load .env.local (that's a Next.js feature, not Node/npm)
+  - dotenv is available as transitive dep via shadcn -> @dotenvx/dotenvx
+---
