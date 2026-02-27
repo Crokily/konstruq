@@ -39,3 +39,12 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - `npm run` does NOT auto-load .env.local (that's a Next.js feature, not Node/npm)
   - dotenv is available as transitive dep via shadcn -> @dotenvx/dotenvx
 ---
+
+## 2026-02-27T14:15 - US-003: Clerk auth flow verification
+- Renamed src/middleware.ts → src/proxy.ts (Next.js 16 deprecation fix)
+- Clerk auth setup verified: ClerkProvider in layout, sign-in/sign-up pages, protected routes
+- Files changed: src/middleware.ts (deleted), src/proxy.ts (created)
+- **Learnings:**
+  - Next.js 16 requires "proxy.ts" not "middleware.ts" 
+  - pi --print has session conflicts — use codex exec directly instead
+---

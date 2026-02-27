@@ -49,7 +49,7 @@
         "Verify in browser at localhost:3000"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Clerk keys are in .env.local. Middleware is at src/middleware.ts."
     },
     {
