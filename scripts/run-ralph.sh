@@ -1,24 +1,20 @@
 #!/bin/bash
-# Konstruq Ralph Loop — Custom runner
+# Konstruq Ralph Loop
 # Model rules:
-#   Planning/orchestration: claude-opus-4-6 • xhigh (fallback: claude-opus-4-6-thinking [google-antigravity] high)
-#   Coding: delegated to codex CLI inside pi session (gpt-5.3-codex • xhigh)
-#   Testing: agent-browser E2E inside pi session
-#   Notifications: discord-agent with gemini-3-flash (background, non-blocking)
-set -e
-
+#   Primary: anthropic/claude-opus-4-6:xhigh
+#   Fallback: google-antigravity/claude-opus-4-6-thinking
+#   Coding: codex CLI (gpt-5.3-codex-xhigh) — delegated by pi
+#   Testing: agent-browser — used by pi
 cd /home/ubuntu/konstruq
 
 MAX_ITERATIONS=${1:-15}
 PRD_FILE="./prd.json"
-PROGRESS_FILE="./progress.txt"
 PROMPT_TEMPLATE="/home/ubuntu/konstruq/scripts/prompt.md"
 
 command -v pi >/dev/null || { echo "pi not found"; exit 1; }
 command -v jq >/dev/null || { echo "jq not found"; exit 1; }
 [ -f "$PRD_FILE" ] || { echo "prd.json not found"; exit 1; }
 
-# Create branch
 BRANCH=$(jq -r '.branchName' "$PRD_FILE")
 CURRENT=$(git branch --show-current)
 if [ "$CURRENT" != "$BRANCH" ]; then
@@ -29,14 +25,16 @@ echo "╔═══════════════════════�
 echo "║           🏗️  Konstruq Ralph Loop Started             ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 
+PRIMARY_MODEL="anthropic/claude-opus-4-6:xhigh"
+FALLBACK_MODEL="google-antigravity/claude-opus-4-6-thinking"
+
 for i in $(seq 1 $MAX_ITERATIONS); do
   TOTAL=$(jq '.userStories | length' "$PRD_FILE")
   DONE=$(jq '[.userStories[] | select(.passes == true)] | length' "$PRD_FILE")
   REMAINING=$((TOTAL - DONE))
 
   if [ "$REMAINING" -eq 0 ]; then
-    echo ""
-    echo "✅ All $TOTAL stories complete at iteration $i!"
+    echo ""; echo "✅ All $TOTAL stories complete at iteration $i!"
     exit 0
   fi
 
@@ -47,32 +45,31 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo "  🔄 Iteration $i/$MAX_ITERATIONS — $DONE/$TOTAL done, $REMAINING remaining"
   echo "  📋 Next: $NEXT"
   echo "  ⏰ $(date '+%H:%M:%S')"
+  echo "  🤖 Model: $PRIMARY_MODEL"
   echo "═══════════════════════════════════════════════════════"
 
   ITER_LOG="/tmp/ralph-iter-$i.log"
 
-  # Primary model: claude-opus-4-6 xhigh
-  pi -m "claude-opus-4-6 • xhigh" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
+  # Primary model
+  timeout 900 pi -m "$PRIMARY_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
   EXIT_CODE=$?
 
   if [ $EXIT_CODE -ne 0 ]; then
-    echo "  ⚠️ Primary model failed (exit $EXIT_CODE). Trying fallback..."
-    pi -m "claude-opus-4-6-thinking [google-antigravity] high" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
+    echo "  ⚠️ Primary model failed (exit $EXIT_CODE). Trying fallback: $FALLBACK_MODEL"
+    timeout 900 pi -m "$FALLBACK_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
     EXIT_CODE=$?
 
     if [ $EXIT_CODE -ne 0 ]; then
-      echo "  ❌ Both models failed. Stopping."
-      echo "  Last log: $ITER_LOG"
-      tail -20 "$ITER_LOG"
+      echo "  ❌ Both models failed at iteration $i. Exit code: $EXIT_CODE"
+      echo "  Last 20 lines of log:"
+      tail -20 "$ITER_LOG" 2>/dev/null
       exit 1
     fi
   fi
 
-  # Show result summary
-  echo "  --- Iteration $i result (last 15 lines) ---"
-  tail -15 "$ITER_LOG"
+  echo "  --- Iteration $i result (last 20 lines) ---"
+  tail -20 "$ITER_LOG"
 
-  # Check completion
   if grep -q "<promise>COMPLETE</promise>" "$ITER_LOG"; then
     echo ""
     echo "╔═══════════════════════════════════════════════════════╗"
@@ -85,8 +82,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   sleep 3
 done
 
-echo ""
-echo "⚠️ Max iterations ($MAX_ITERATIONS) reached."
+echo ""; echo "⚠️ Max iterations ($MAX_ITERATIONS) reached."
 DONE_FINAL=$(jq '[.userStories[] | select(.passes == true)] | length' "$PRD_FILE")
 echo "Status: $DONE_FINAL/$TOTAL stories complete"
 jq -r '.userStories[] | "\(.id): \(.title) — \(if .passes then "✅" else "❌" end)"' "$PRD_FILE"
