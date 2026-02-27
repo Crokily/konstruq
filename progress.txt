@@ -79,3 +79,10 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
 - Dashboard and Projects pages updated with real data
 - **Learnings:** Recharts ScatterChart needs explicit XAxis/YAxis/ZAxis for proper rendering
 ---
+
+## 2026-02-27T14:55 - US-009: Project detail — cost breakdown and EVM chart
+- 3 new chart components: CostBreakdownChart, EVMChart, EVMKPIBadges
+- Project detail page with header, progress, source badges, dual charts
+- Mock data IDs normalized to "1"-"6" strings across all files
+- **Learnings:** Next.js 16 params is Promise - must await. Recharts grouped bars need explicit Bar per series.
+---

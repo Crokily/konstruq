@@ -150,7 +150,7 @@
         "Verify in browser"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Page at /projects/[id]. Use mock data provider. CPI=EV/AC, SPI=EV/PV."
     },
     {
