@@ -133,7 +133,7 @@
         "Verify in browser"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Add scatter to /dashboard below summary charts. Project list at /projects page."
     },
     {

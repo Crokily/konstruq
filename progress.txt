@@ -72,3 +72,10 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Recharts v3 works well with React 19 
   - Keep chart components as "use client", page as server component
 ---
+
+## 2026-02-27T14:45 - US-008: Project health scatter plot and project list table
+- Scatter plot with diagonal reference line, color-coded health dots
+- TanStack Table with 6 sortable columns + row click navigation
+- Dashboard and Projects pages updated with real data
+- **Learnings:** Recharts ScatterChart needs explicit XAxis/YAxis/ZAxis for proper rendering
+---
