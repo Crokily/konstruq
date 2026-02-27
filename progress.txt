@@ -93,3 +93,10 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
 - Financials page with server-side data fetch, 3 chart cards
 - **Learnings:** Waterfall chart = stacked bars with invisible base. shadcn Select needed for dropdown.
 ---
+
+## 2026-02-27T15:15 - US-011: Integrations page, loading states, visual polish
+- Integrations page with Procore/Sage cards, feature lists, status badges
+- Settings placeholder page
+- Loading skeletons for 3 dashboard pages using shadcn Skeleton
+- Sidebar nav confirmed with all routes
+---
