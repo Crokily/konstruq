@@ -1,0 +1,17 @@
+# Ralph Progress Log
+Started: 2026-02-27T11:45:00Z
+PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
+
+## Codebase Patterns
+- Project uses Next.js 16 App Router with src/ directory
+- UI components in src/components/ui/ (shadcn/ui)
+- Custom components in src/components/layout/ and src/components/charts/
+- Database: Neon + Drizzle ORM, schema at src/lib/db/schema.ts
+- Auth: Clerk, middleware at src/middleware.ts
+- Types: src/lib/types/procore.ts and src/lib/types/sage.ts
+- Mock data: src/lib/data/mock/, providers: src/lib/data/providers/
+- Route groups: (auth) for sign-in/up, (dashboard) for protected pages
+- Dark theme: bg-slate-950, cards bg-slate-900/50, accent amber-500
+- Env vars in .env.local (Clerk, Neon, Procore sandbox keys present)
+- Recharts for all charts (Tremor incompatible with React 19)
+---
