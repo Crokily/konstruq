@@ -65,7 +65,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Procore sandbox credentials in .env.local. Auth URL: https://login.procore.com/oauth/authorize. Token URL: https://login.procore.com/oauth/token. API base: https://sandbox.procore.com"
     },
     {
@@ -80,7 +80,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Use GET /rest/v1.1/projects with Authorization: Bearer {token} and Procore-Company-Id header. Company ID comes from user's Procore connection."
     },
     {

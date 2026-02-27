@@ -100,3 +100,12 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
 - Loading skeletons for 3 dashboard pages using shadcn Skeleton
 - Sidebar nav confirmed with all routes
 ---
+
+## 2026-02-27T15:25 - US-004+US-005: Procore OAuth and data sync
+- 3 API routes: /api/procore/{auth, callback, sync}
+- OAuth flow: auth redirect → callback token exchange → DB storage
+- Project sync: fetch from Procore REST v1.1 → upsert to synced_projects
+- Integrations page updated with dynamic connection status
+- ProCoreSyncButton client component for async sync
+- **Learnings:** Drizzle upsert needs manual find+update-or-insert pattern for Neon
+---
