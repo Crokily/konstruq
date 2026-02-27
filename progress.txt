@@ -48,3 +48,16 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Next.js 16 requires "proxy.ts" not "middleware.ts" 
   - pi --print has session conflicts — use codex exec directly instead
 ---
+
+## 2026-02-27T14:25 - US-006: Mock Sage Intacct financial data and DataProvider
+- Created DataProvider interface with 12 methods for all chart data
+- 6 mock construction projects with realistic $10M-$67M valuations
+- Per-project financials: cost breakdown by category, 12-month EVM curves
+- 3-5 change orders per project, 8-12 schedule tasks per project
+- AR/AP aging data with 5 buckets
+- MockDataProvider with computed KPIs (CPI, SPI, health matrix)
+- Files: src/lib/data/{index.ts, providers/interface.ts, providers/mock.ts, mock/*.ts}
+- **Learnings:**
+  - Codex CLI (gpt-5.3-codex) handles large file generation well
+  - Always verify typecheck after codex generates multiple interdependent files
+---

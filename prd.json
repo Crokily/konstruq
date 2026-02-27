@@ -98,7 +98,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Use types from src/lib/types/procore.ts and src/lib/types/sage.ts. Data should be realistic for construction: project values $10M-$70M, varied completion percentages."
     },
     {
