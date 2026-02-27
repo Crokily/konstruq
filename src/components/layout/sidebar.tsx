@@ -41,6 +41,11 @@ const navItems = [
   },
 ];
 
+const dataSources = [
+  { name: "Procore", connected: false },
+  { name: "Sage Intacct", connected: false },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -81,8 +86,13 @@ export function Sidebar() {
           Data Sources
         </p>
         <div className="space-y-1.5">
-          <DataSourceBadge name="Procore" connected={false} />
-          <DataSourceBadge name="Sage Intacct" connected={false} />
+          {dataSources.map((dataSource) => (
+            <DataSourceBadge
+              key={dataSource.name}
+              name={dataSource.name}
+              connected={dataSource.connected}
+            />
+          ))}
         </div>
       </div>
 
