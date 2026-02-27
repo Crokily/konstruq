@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { KPICards } from "@/components/charts/kpi-cards";
+import { ProjectHealthScatter } from "@/components/charts/project-health-scatter";
 import { ProjectStatusChart } from "@/components/charts/project-status-chart";
 import { RevenueExpenseChart } from "@/components/charts/revenue-expense-chart";
 import {
@@ -15,10 +16,11 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const dataProvider = new MockDataProvider();
 
-  const [kpis, projects, revenueExpenseTrend] = await Promise.all([
+  const [kpis, projects, revenueExpenseTrend, projectHealthMatrix] = await Promise.all([
     dataProvider.getPortfolioKPIs(),
     dataProvider.getProjects(),
     dataProvider.getRevenueExpenseTrend(),
+    dataProvider.getProjectHealthMatrix(),
   ]);
 
   return (
@@ -59,6 +61,18 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-slate-800 bg-slate-900/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-slate-100">Project Health Matrix</CardTitle>
+          <CardDescription className="text-slate-400">
+            Schedule completion compared to budget burn
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProjectHealthScatter matrix={projectHealthMatrix} projects={projects} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
