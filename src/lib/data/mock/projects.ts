@@ -2,7 +2,7 @@ import type { BaseProject } from "@/lib/data/providers/interface";
 
 export const mockProjects: BaseProject[] = [
   {
-    id: "riverside-medical-center",
+    id: "1",
     name: "Riverside Medical Center",
     type: "Healthcare",
     status: "Active",
@@ -29,7 +29,7 @@ export const mockProjects: BaseProject[] = [
     },
   },
   {
-    id: "harbor-view-condominiums",
+    id: "2",
     name: "Harbor View Condominiums",
     type: "Residential",
     status: "Active",
@@ -56,7 +56,7 @@ export const mockProjects: BaseProject[] = [
     },
   },
   {
-    id: "techpark-office-complex-phase-2",
+    id: "3",
     name: "TechPark Office Complex Phase 2",
     type: "Commercial",
     status: "Active",
@@ -83,7 +83,7 @@ export const mockProjects: BaseProject[] = [
     },
   },
   {
-    id: "downtown-parking-structure",
+    id: "4",
     name: "Downtown Parking Structure",
     type: "Infrastructure",
     status: "Active",
@@ -110,7 +110,7 @@ export const mockProjects: BaseProject[] = [
     },
   },
   {
-    id: "greenfield-elementary-school",
+    id: "5",
     name: "Greenfield Elementary School",
     type: "Education",
     status: "Active",
@@ -137,7 +137,7 @@ export const mockProjects: BaseProject[] = [
     },
   },
   {
-    id: "sunset-strip-hotel-renovation",
+    id: "6",
     name: "Sunset Strip Hotel Renovation",
     type: "Hospitality",
     status: "Pre-Construction",

@@ -85,7 +85,7 @@ function createMonthlyEVM({
 
 const financialSeeds: FinancialSeed[] = [
   {
-    projectId: "riverside-medical-center",
+    projectId: "1",
     originalContractAmount: 44_600_000,
     approvedChangeOrders: 2_300_000,
     revisedContractAmount: 46_900_000,
@@ -117,7 +117,7 @@ const financialSeeds: FinancialSeed[] = [
     acStartRatio: 1.15,
   },
   {
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     originalContractAmount: 27_800_000,
     approvedChangeOrders: 1_300_000,
     revisedContractAmount: 29_100_000,
@@ -145,7 +145,7 @@ const financialSeeds: FinancialSeed[] = [
     acStartRatio: 1.02,
   },
   {
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     originalContractAmount: 67_100_000,
     approvedChangeOrders: 4_300_000,
     revisedContractAmount: 71_400_000,
@@ -181,7 +181,7 @@ const financialSeeds: FinancialSeed[] = [
     acStartRatio: 1.21,
   },
   {
-    projectId: "downtown-parking-structure",
+    projectId: "4",
     originalContractAmount: 12_000_000,
     approvedChangeOrders: 600_000,
     revisedContractAmount: 12_600_000,
@@ -205,7 +205,7 @@ const financialSeeds: FinancialSeed[] = [
     acStartRatio: 0.99,
   },
   {
-    projectId: "greenfield-elementary-school",
+    projectId: "5",
     originalContractAmount: 18_500_000,
     approvedChangeOrders: 700_000,
     revisedContractAmount: 19_200_000,
@@ -229,7 +229,7 @@ const financialSeeds: FinancialSeed[] = [
     acStartRatio: 1.13,
   },
   {
-    projectId: "sunset-strip-hotel-renovation",
+    projectId: "6",
     originalContractAmount: 22_000_000,
     approvedChangeOrders: 800_000,
     revisedContractAmount: 22_800_000,

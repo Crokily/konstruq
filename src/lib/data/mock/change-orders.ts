@@ -3,7 +3,7 @@ import type { ChangeOrder } from "@/lib/data/providers/interface";
 export const mockChangeOrders: ChangeOrder[] = [
   {
     id: "co-rmc-001",
-    projectId: "riverside-medical-center",
+    projectId: "1",
     number: "CO-001",
     title: "Emergency Department Imaging Scope",
     status: "Approved",
@@ -12,7 +12,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-rmc-002",
-    projectId: "riverside-medical-center",
+    projectId: "1",
     number: "CO-002",
     title: "Medical Gas Routing Rework",
     status: "Approved",
@@ -21,7 +21,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-rmc-003",
-    projectId: "riverside-medical-center",
+    projectId: "1",
     number: "CO-003",
     title: "Lead Shielding Upgrade",
     status: "Approved",
@@ -30,7 +30,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-rmc-004",
-    projectId: "riverside-medical-center",
+    projectId: "1",
     number: "CO-004",
     title: "Facade Material Credit",
     status: "Pending",
@@ -39,7 +39,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-hvc-001",
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     number: "CO-001",
     title: "Balcony Drainage Improvement",
     status: "Approved",
@@ -48,7 +48,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-hvc-002",
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     number: "CO-002",
     title: "Lobby Finish Upgrade",
     status: "Approved",
@@ -57,7 +57,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-hvc-003",
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     number: "CO-003",
     title: "Fire Alarm Device Relocation",
     status: "Approved",
@@ -66,7 +66,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-hvc-004",
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     number: "CO-004",
     title: "Utility Easement Reroute",
     status: "Pending",
@@ -75,7 +75,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-hvc-005",
-    projectId: "harbor-view-condominiums",
+    projectId: "2",
     number: "CO-005",
     title: "Unit Mix Revision",
     status: "Rejected",
@@ -84,7 +84,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-tpc-001",
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     number: "CO-001",
     title: "Tenant Improvement Package A",
     status: "Approved",
@@ -93,7 +93,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-tpc-002",
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     number: "CO-002",
     title: "Generator Capacity Increase",
     status: "Approved",
@@ -102,7 +102,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-tpc-003",
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     number: "CO-003",
     title: "MEP Coordination Resolution",
     status: "Approved",
@@ -111,7 +111,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-tpc-004",
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     number: "CO-004",
     title: "Atrium Steel Redesign",
     status: "Pending",
@@ -120,7 +120,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-tpc-005",
-    projectId: "techpark-office-complex-phase-2",
+    projectId: "3",
     number: "CO-005",
     title: "Parking Deck Value Engineering Credit",
     status: "Rejected",
@@ -129,7 +129,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-dps-001",
-    projectId: "downtown-parking-structure",
+    projectId: "4",
     number: "CO-001",
     title: "EV Charger Infrastructure",
     status: "Approved",
@@ -138,7 +138,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-dps-002",
-    projectId: "downtown-parking-structure",
+    projectId: "4",
     number: "CO-002",
     title: "Traffic Signal Interface",
     status: "Approved",
@@ -147,7 +147,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-dps-003",
-    projectId: "downtown-parking-structure",
+    projectId: "4",
     number: "CO-003",
     title: "Precast Erection Sequencing",
     status: "Pending",
@@ -156,7 +156,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-dps-004",
-    projectId: "downtown-parking-structure",
+    projectId: "4",
     number: "CO-004",
     title: "Perimeter Railing Credit",
     status: "Rejected",
@@ -165,7 +165,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ges-001",
-    projectId: "greenfield-elementary-school",
+    projectId: "5",
     number: "CO-001",
     title: "Kitchen Equipment Allowance",
     status: "Approved",
@@ -174,7 +174,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ges-002",
-    projectId: "greenfield-elementary-school",
+    projectId: "5",
     number: "CO-002",
     title: "Playground Grading Revision",
     status: "Approved",
@@ -183,7 +183,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ges-003",
-    projectId: "greenfield-elementary-school",
+    projectId: "5",
     number: "CO-003",
     title: "Acoustic Ceiling Upgrade",
     status: "Approved",
@@ -192,7 +192,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ges-004",
-    projectId: "greenfield-elementary-school",
+    projectId: "5",
     number: "CO-004",
     title: "Stormwater Outfall Adjustment",
     status: "Pending",
@@ -201,7 +201,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ssh-001",
-    projectId: "sunset-strip-hotel-renovation",
+    projectId: "6",
     number: "CO-001",
     title: "Historic Facade Repair Scope",
     status: "Approved",
@@ -210,7 +210,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ssh-002",
-    projectId: "sunset-strip-hotel-renovation",
+    projectId: "6",
     number: "CO-002",
     title: "Back-of-House Structural Reinforcement",
     status: "Approved",
@@ -219,7 +219,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ssh-003",
-    projectId: "sunset-strip-hotel-renovation",
+    projectId: "6",
     number: "CO-003",
     title: "Ballroom AV Rough-in",
     status: "Pending",
@@ -228,7 +228,7 @@ export const mockChangeOrders: ChangeOrder[] = [
   },
   {
     id: "co-ssh-004",
-    projectId: "sunset-strip-hotel-renovation",
+    projectId: "6",
     number: "CO-004",
     title: "Guestroom Millwork Alternate",
     status: "Rejected",

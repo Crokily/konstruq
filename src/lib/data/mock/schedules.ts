@@ -34,7 +34,7 @@ function buildProjectSchedule(
 }
 
 export const mockScheduleTasks: ScheduleTask[] = [
-  ...buildProjectSchedule("riverside-medical-center", [
+  ...buildProjectSchedule("1", [
     {
       key: "phase-construction",
       name: "Construction Phase",
@@ -133,7 +133,7 @@ export const mockScheduleTasks: ScheduleTask[] = [
       isMilestone: true,
     },
   ]),
-  ...buildProjectSchedule("harbor-view-condominiums", [
+  ...buildProjectSchedule("2", [
     {
       key: "phase-construction",
       name: "Construction Phase",
@@ -232,7 +232,7 @@ export const mockScheduleTasks: ScheduleTask[] = [
       isMilestone: true,
     },
   ]),
-  ...buildProjectSchedule("techpark-office-complex-phase-2", [
+  ...buildProjectSchedule("3", [
     {
       key: "phase-construction",
       name: "Construction Phase",
@@ -341,7 +341,7 @@ export const mockScheduleTasks: ScheduleTask[] = [
       isMilestone: true,
     },
   ]),
-  ...buildProjectSchedule("downtown-parking-structure", [
+  ...buildProjectSchedule("4", [
     {
       key: "phase-construction",
       name: "Construction Phase",
@@ -440,7 +440,7 @@ export const mockScheduleTasks: ScheduleTask[] = [
       isMilestone: true,
     },
   ]),
-  ...buildProjectSchedule("greenfield-elementary-school", [
+  ...buildProjectSchedule("5", [
     {
       key: "phase-construction",
       name: "Construction Phase",
@@ -539,7 +539,7 @@ export const mockScheduleTasks: ScheduleTask[] = [
       isMilestone: true,
     },
   ]),
-  ...buildProjectSchedule("sunset-strip-hotel-renovation", [
+  ...buildProjectSchedule("6", [
     {
       key: "phase-preconstruction",
       name: "Pre-Construction and Renovation",
