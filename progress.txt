@@ -61,3 +61,14 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Codex CLI (gpt-5.3-codex) handles large file generation well
   - Always verify typecheck after codex generates multiple interdependent files
 ---
+
+## 2026-02-27T14:35 - US-007: Dashboard overview — KPI cards and summary charts
+- Created 3 chart components: KPICards, ProjectStatusChart, RevenueExpenseChart
+- Dashboard page is server component, charts are client components
+- Data flows: MockDataProvider → server fetch → pass as props to client charts
+- Recharts v3 pattern: "use client" + named imports from "recharts"
+- Currency formatting via Intl.NumberFormat compact notation
+- **Learnings:**
+  - Recharts v3 works well with React 19 
+  - Keep chart components as "use client", page as server component
+---
