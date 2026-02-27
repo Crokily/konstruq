@@ -167,7 +167,7 @@
         "Verify in browser"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Page at /financials. Use Recharts ComposedChart for combo, BarChart for aging. Waterfall can be implemented with stacked bars (invisible base + visible delta)."
     },
     {

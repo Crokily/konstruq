@@ -86,3 +86,10 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
 - Mock data IDs normalized to "1"-"6" strings across all files
 - **Learnings:** Next.js 16 params is Promise - must await. Recharts grouped bars need explicit Bar per series.
 ---
+
+## 2026-02-27T15:05 - US-010: Financials page — cash flow, aging, change order waterfall
+- 3 chart components + shadcn Select component added
+- Waterfall uses transparent base bar stacking technique
+- Financials page with server-side data fetch, 3 chart cards
+- **Learnings:** Waterfall chart = stacked bars with invisible base. shadcn Select needed for dropdown.
+---
