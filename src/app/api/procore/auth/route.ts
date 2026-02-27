@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -9,7 +9,9 @@ export async function GET() {
   }
 
   const clientId = process.env.PROCORE_CLIENT_ID;
-  const redirectUri = process.env.PROCORE_REDIRECT_URI;
+  const redirectUri =
+    process.env.PROCORE_REDIRECT_URI ||
+    `${request.nextUrl.origin}/api/procore/callback`;
   const authUrl = process.env.PROCORE_AUTH_URL;
 
   if (!clientId || !redirectUri || !authUrl) {

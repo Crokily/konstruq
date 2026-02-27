@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.PROCORE_CLIENT_ID;
   const clientSecret = process.env.PROCORE_CLIENT_SECRET;
-  const redirectUri = process.env.PROCORE_REDIRECT_URI;
+  const redirectUri =
+    process.env.PROCORE_REDIRECT_URI ||
+    `${request.nextUrl.origin}/api/procore/callback`;
   const tokenUrl = process.env.PROCORE_TOKEN_URL;
   const apiBaseUrl = process.env.PROCORE_API_BASE_URL;
 
