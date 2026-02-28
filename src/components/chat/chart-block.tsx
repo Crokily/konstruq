@@ -1,81 +1,16 @@
 "use client";
 
 import { Info, Maximize2 } from "lucide-react";
+import { ChartDataTable, getChartDataTableColumns } from "@/components/charts/chart-data-table";
 import { ChartFromSpec } from "@/components/chat/chart-from-spec";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { NormalizeChartSpecResult } from "@/lib/charting/spec";
-import { cn } from "@/lib/utils";
 
 interface ChartBlockProps {
   result: NormalizeChartSpecResult;
-}
-
-const numberFormatter = new Intl.NumberFormat();
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseNumericString(value: string): number | null {
-  const normalized = value.trim().replace(/,/g, "");
-  if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
-    return null;
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function formatTableValue(value: unknown): { text: string; isNumeric: boolean } {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return { text: numberFormatter.format(value), isNumeric: true };
-  }
-
-  if (typeof value === "string") {
-    const parsed = parseNumericString(value);
-    if (parsed !== null) {
-      return { text: numberFormatter.format(parsed), isNumeric: true };
-    }
-
-    return { text: value, isNumeric: false };
-  }
-
-  if (value === null || value === undefined) {
-    return { text: "—", isNumeric: false };
-  }
-
-  if (typeof value === "boolean") {
-    return { text: value ? "true" : "false", isNumeric: false };
-  }
-
-  return { text: JSON.stringify(value), isNumeric: false };
-}
-
-function resolvePieTableKeys(spec: NormalizeChartSpecResult["spec"]) {
-  const rawSpec = spec as unknown as Record<string, unknown>;
-  const nameKey =
-    typeof rawSpec.nameKey === "string" && rawSpec.nameKey.trim().length > 0
-      ? rawSpec.nameKey
-      : spec.xAxisKey;
-  const valueKey =
-    typeof rawSpec.valueKey === "string" && rawSpec.valueKey.trim().length > 0
-      ? rawSpec.valueKey
-      : spec.metrics[0]?.key ?? "value";
-
-  return { nameKey, valueKey };
-}
-
-function getTableColumns(spec: NormalizeChartSpecResult["spec"]): string[] {
-  if (spec.type === "pie") {
-    const { nameKey, valueKey } = resolvePieTableKeys(spec);
-    return Array.from(new Set([nameKey, valueKey]));
-  }
-
-  return Array.from(new Set([spec.xAxisKey, ...spec.metrics.map((metric) => metric.key)]));
 }
 
 interface ChartTabsContentProps {
@@ -150,10 +85,8 @@ function MethodologyPopoverButton({ methodology }: { methodology: ResolvedMethod
 }
 
 function ChartTabsContent({ result, hints, tableContainerClassName }: ChartTabsContentProps) {
-  const columns = getTableColumns(result.spec);
-  const rows = Array.isArray(result.spec.data)
-    ? result.spec.data.filter((row): row is Record<string, unknown> => isRecord(row))
-    : [];
+  const columns = getChartDataTableColumns(result.spec);
+  const rows = Array.isArray(result.spec.data) ? result.spec.data : [];
 
   return (
     <Tabs defaultValue="chart" className="w-full gap-3">
@@ -165,45 +98,7 @@ function ChartTabsContent({ result, hints, tableContainerClassName }: ChartTabsC
         <ChartFromSpec spec={result.spec} hints={hints} warnings={result.warnings} />
       </TabsContent>
       <TabsContent value="table" forceMount className="mt-0 data-[state=inactive]:hidden">
-        {columns.length === 0 ? (
-          <div className="rounded-lg border border-border bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
-            No table columns available for this chart.
-          </div>
-        ) : (
-          <div className={cn("max-h-[24rem] overflow-auto rounded-lg border border-border", tableContainerClassName)}>
-            <Table className="min-w-full">
-              <TableHeader className="bg-muted/40 [&_tr]:border-b-border">
-                <TableRow className="border-border hover:bg-transparent">
-                  {columns.map((column) => (
-                    <TableHead key={column} className="px-3 py-2 text-xs uppercase tracking-wide text-muted-foreground">
-                      {column}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row, rowIndex) => (
-                  <TableRow key={`${result.spec.title}-row-${rowIndex}`} className="border-border hover:bg-muted/60">
-                    {columns.map((column) => {
-                      const formatted = formatTableValue(row[column]);
-                      return (
-                        <TableCell
-                          key={`${result.spec.title}-row-${rowIndex}-col-${column}`}
-                          className={cn(
-                            "px-3 py-2 text-sm text-foreground",
-                            formatted.isNumeric ? "text-right tabular-nums" : "",
-                          )}
-                        >
-                          {formatted.text}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <ChartDataTable columns={columns} data={rows} className={tableContainerClassName} rowKeyPrefix={result.spec.title} />
       </TabsContent>
     </Tabs>
   );
