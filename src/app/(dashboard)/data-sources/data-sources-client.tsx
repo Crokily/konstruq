@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DASHBOARD_STORAGE_KEY } from "@/lib/dashboard/types";
 
 export type DatasetCategory = "pm" | "erp" | "uploaded";
 
@@ -149,6 +150,10 @@ function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+function clearDashboardCache() {
+  window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
+}
+
 export function DataSourcesClient({
   initialDatasets,
   projects,
@@ -223,6 +228,7 @@ export function DataSourcesClient({
           ...prev.filter((dataset) => dataset.id !== nextDataset.id),
         ]),
       );
+      clearDashboardCache();
 
       setStatus({
         type: "success",
@@ -251,6 +257,7 @@ export function DataSourcesClient({
       }
 
       setDatasets((prev) => prev.filter((item) => item.id !== dataset.id));
+      clearDashboardCache();
       setStatus({
         type: "success",
         message: `${dataset.fileName} deleted.`,

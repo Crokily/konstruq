@@ -13,6 +13,7 @@ import {
   buildDashboardDataVersion,
 } from "@/lib/dashboard/types";
 import { projects, uploadedDatasets } from "@/lib/db/schema";
+import { CustomDashboardsSection } from "./custom-dashboards-section";
 
 export default async function ProjectDashboardPage({
   params,
@@ -131,6 +132,8 @@ export default async function ProjectDashboardPage({
         projectId={project.id}
         variant="project-controls"
       />
+
+      <CustomDashboardsSection projectId={project.id} />
     </div>
   );
 }
