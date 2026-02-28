@@ -240,7 +240,7 @@
         "Verify in browser"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Similar pattern to main dashboard page. The financials prompt should emphasize financial KPIs and cost analytics. Remove all MockDataProvider and static chart imports."
     },
     {
