@@ -1,5 +1,9 @@
 import { AlertCircle, Loader2, RotateCcw } from "lucide-react";
-import { MessageRenderer } from "@/components/chat/message-renderer";
+import {
+  MessageRenderer,
+  type MessageWidgetAddRequest,
+  type MessageWidgetAddState,
+} from "@/components/chat/message-renderer";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -16,6 +20,8 @@ interface ChatThreadProps {
   suggestions: readonly string[];
   loadingLabel?: string;
   onSuggestionClick: (suggestion: string) => void;
+  onAddWidget?: (widget: MessageWidgetAddRequest) => void | Promise<void>;
+  getAddWidgetState?: (blockKey: string) => MessageWidgetAddState;
 }
 
 export function ChatThread({
@@ -26,6 +32,8 @@ export function ChatThread({
   suggestions,
   loadingLabel = "Generating...",
   onSuggestionClick,
+  onAddWidget,
+  getAddWidgetState,
 }: ChatThreadProps) {
   if (messages.length === 0) {
     return (
@@ -69,7 +77,15 @@ export function ChatThread({
                       : "overflow-hidden border border-border bg-muted text-foreground",
                   )}
                 >
-                  {isUser ? <>{message.content}</> : <MessageRenderer content={String(message.content)} />}
+                  {isUser ? (
+                    <>{message.content}</>
+                  ) : (
+                    <MessageRenderer
+                      content={String(message.content)}
+                      onAddWidget={onAddWidget}
+                      getAddWidgetState={getAddWidgetState}
+                    />
+                  )}
                 </div>
               </div>
             </div>

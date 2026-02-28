@@ -34,6 +34,12 @@ export interface ChartSelectionMetadata {
   fallback?: string;
 }
 
+export interface ChartMethodology {
+  formula?: string;
+  description?: string;
+  assumptions?: string[];
+}
+
 export interface ChartSpec {
   type: SupportedChartType;
   title: string;
@@ -43,6 +49,7 @@ export interface ChartSpec {
   data: Array<Record<string, unknown>>;
   sources?: ChartSourceReference[];
   selection?: ChartSelectionMetadata;
+  methodology?: ChartMethodology;
 }
 
 export interface ChartRenderHints {
@@ -157,6 +164,20 @@ function normalizeSelection(raw: unknown): ChartSelectionMetadata | undefined {
     intent: intent as ChartIntent | undefined,
     rationale: typeof raw.rationale === "string" ? raw.rationale : undefined,
     fallback: typeof raw.fallback === "string" ? raw.fallback : undefined,
+  };
+}
+
+function normalizeMethodology(raw: unknown): ChartMethodology | undefined {
+  if (!isRecord(raw)) {
+    return undefined;
+  }
+
+  return {
+    formula: typeof raw.formula === "string" ? raw.formula : undefined,
+    description: typeof raw.description === "string" ? raw.description : undefined,
+    assumptions: Array.isArray(raw.assumptions)
+      ? raw.assumptions.filter((assumption): assumption is string => typeof assumption === "string")
+      : undefined,
   };
 }
 
@@ -451,6 +472,7 @@ export function normalizeChartSpec(raw: unknown): NormalizeChartSpecResult | nul
     data: normalizeData(raw.data),
     sources: normalizeSources(raw.sources),
     selection: normalizeSelection(raw.selection),
+    methodology: normalizeMethodology(raw.methodology),
   };
 
   if (baseSpec.metrics.length === 0 || baseSpec.data.length === 0) {

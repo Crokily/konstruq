@@ -13,10 +13,13 @@ When a project context is active, all data queries are automatically scoped to t
 
 Output format rules:
 - Use plain text for explanation.
+- Do NOT write formulas, equations, or step-by-step calculation breakdowns as plain text in the message body.
+- Keep message text concise: brief insight summary, key findings, and actionable recommendations only (3-5 sentences max before/after chart blocks).
 - Use \`\`\`chart blocks for charts with JSON only:
 \`\`\`chart
-{"type":"bar|line|area|pie|scatter|stacked-bar|composed","title":"...","subtitle":"...","xAxisKey":"...","metrics":[{"key":"...","label":"...","color":"#hex"}],"sources":[{"fileName":"...","sheetName":"...","columns":["exactColumnA","exactColumnB"]}],"selection":{"domain":"construction|finance|healthcare|retail|general","intent":"composition|trend|ranking|distribution|relationship|deviation|forecast","rationale":"...","fallback":"..."},"data":[...]}
+{"type":"bar|line|area|pie|scatter|stacked-bar|composed","title":"...","subtitle":"...","xAxisKey":"...","metrics":[{"key":"...","label":"...","color":"#hex"}],"sources":[{"fileName":"...","sheetName":"...","columns":["exactColumnA","exactColumnB"]}],"selection":{"domain":"construction|finance|healthcare|retail|general","intent":"composition|trend|ranking|distribution|relationship|deviation|forecast","rationale":"...","fallback":"..."},"methodology":{"formula":"...","description":"...","assumptions":["..."]},"data":[...]}
 \`\`\`
+- For every chart block, embed analytical methodology in \`methodology\`: \`{"formula"?: "...", "description"?: "...", "assumptions"?: ["..."]}\`.
 - Use \`\`\`table blocks for tables:
 \`\`\`table
 {"headers":["col1","col2"],"rows":[["v1","v2"]]}

@@ -22,6 +22,12 @@ export interface KPIItem {
   description?: string;
 }
 
+export interface ChartMethodology {
+  formula?: string;
+  description?: string;
+  assumptions?: string[];
+}
+
 export interface ChartSpec {
   id: string;
   type: ChartType;
@@ -33,6 +39,7 @@ export interface ChartSpec {
   nameKey?: string;
   valueKey?: string;
   colors: string[];
+  methodology?: ChartMethodology;
 }
 
 export interface DashboardContent {
@@ -128,6 +135,22 @@ function parseKPIItem(value: unknown, index: number): KPIItem | null {
   };
 }
 
+function parseMethodology(value: unknown): ChartMethodology | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return {
+    formula: typeof value.formula === "string" ? value.formula : undefined,
+    description: typeof value.description === "string" ? value.description : undefined,
+    assumptions: Array.isArray(value.assumptions)
+      ? value.assumptions.filter(
+          (assumption): assumption is string => typeof assumption === "string",
+        )
+      : undefined,
+  };
+}
+
 function parseChartSpec(value: unknown, index: number): ChartSpec | null {
   if (!isRecord(value)) {
     return null;
@@ -157,6 +180,8 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
     ? value.data.filter((item): item is Record<string, unknown> => isRecord(item))
     : [];
 
+  const methodology = parseMethodology(value.methodology);
+
   if (type === "pie") {
     if (typeof value.nameKey !== "string" || typeof value.valueKey !== "string") {
       return null;
@@ -171,6 +196,7 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
       nameKey: value.nameKey,
       valueKey: value.valueKey,
       colors: normalizeColors(value.colors, 1),
+      methodology,
     };
   }
 
@@ -196,6 +222,7 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
       value.colors,
       type === "scatter" ? 1 : yKeys.length,
     ),
+    methodology,
   };
 }
 
