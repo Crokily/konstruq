@@ -1,18 +1,16 @@
 import { mistral } from "@ai-sdk/mistral";
 import { auth } from "@clerk/nextjs/server";
 import { streamText, type CoreMessage } from "ai";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { uploadedDatasets, users } from "@/lib/db/schema";
 import { buildChartSelectionPolicyPrompt } from "@/lib/charting/policy";
 
-const MAX_DATA_TOKENS = 30_000;
-const PREVIEW_ROW_LIMIT = 20;
-const MAX_MESSAGE_COUNT = 16;
-const MAX_MESSAGES_TOKENS = 22_000;
-const MAX_SINGLE_MESSAGE_CHARS = 6_000;
+const MAX_DATA_TOKENS = 20_000;
+const PREVIEW_ROW_LIMIT = 8;
+const MAX_DATASETS_IN_PROMPT = 6;
 
 interface DatasetSheet {
   sheetName: string;
@@ -30,9 +28,8 @@ interface DatasetContextItem {
 
 interface DatasetBudgetItem {
   dataset: DatasetContextItem;
-  fullTokens: number;
-  truncatedTokens: number;
-  includeFullRows: boolean;
+  previewTokens: number;
+  included: boolean;
 }
 
 function normalizeRows(value: unknown): Record<string, unknown>[] {
@@ -83,47 +80,44 @@ function normalizeSheets(value: unknown): DatasetSheet[] {
     .filter((sheet): sheet is DatasetSheet => sheet !== null);
 }
 
-function estimateRowsTokens(sheets: DatasetSheet[], rowLimit?: number): number {
-  const rows = sheets.map((sheet) =>
-    typeof rowLimit === "number" ? sheet.rows.slice(0, rowLimit) : sheet.rows,
-  );
-
+function estimateRowsTokens(sheets: DatasetSheet[], rowLimit: number): number {
+  const rows = sheets.map((sheet) => sheet.rows.slice(0, rowLimit));
   return JSON.stringify(rows).length / 4;
 }
 
 function applyDataBudget(datasets: DatasetContextItem[]): {
   items: DatasetBudgetItem[];
+  includedCount: number;
+  omittedCount: number;
   totalDataTokens: number;
 } {
-  const budgetItems: DatasetBudgetItem[] = datasets.map((dataset) => ({
+  const items: DatasetBudgetItem[] = datasets.map((dataset) => ({
     dataset,
-    fullTokens: estimateRowsTokens(dataset.sheets),
-    truncatedTokens: estimateRowsTokens(dataset.sheets, PREVIEW_ROW_LIMIT),
-    includeFullRows: true,
+    previewTokens: estimateRowsTokens(dataset.sheets, PREVIEW_ROW_LIMIT),
+    included: false,
   }));
 
-  let totalDataTokens = budgetItems.reduce(
-    (sum, item) => sum + item.fullTokens,
-    0,
-  );
+  let remainingBudget = MAX_DATA_TOKENS;
 
-  if (totalDataTokens > MAX_DATA_TOKENS) {
-    const byLargestFirst = [...budgetItems].sort(
-      (a, b) => b.fullTokens - a.fullTokens,
-    );
+  for (const [index, item] of items.entries()) {
+    const canFit = item.previewTokens <= remainingBudget;
 
-    for (const item of byLargestFirst) {
-      if (totalDataTokens <= MAX_DATA_TOKENS) {
-        break;
-      }
-
-      item.includeFullRows = false;
-      totalDataTokens = totalDataTokens - item.fullTokens + item.truncatedTokens;
+    if (canFit || index === 0) {
+      item.included = true;
+      remainingBudget = Math.max(0, remainingBudget - item.previewTokens);
     }
   }
 
+  const includedCount = items.filter((item) => item.included).length;
+  const omittedCount = items.length - includedCount;
+  const totalDataTokens = items
+    .filter((item) => item.included)
+    .reduce((sum, item) => sum + item.previewTokens, 0);
+
   return {
-    items: budgetItems,
+    items,
+    includedCount,
+    omittedCount,
     totalDataTokens,
   };
 }
@@ -133,39 +127,42 @@ function buildDatasetsContext(datasets: DatasetContextItem[]): string {
     return "Uploaded datasets context: no active datasets were found for this user.";
   }
 
-  const { items, totalDataTokens } = applyDataBudget(datasets);
+  const { items, includedCount, omittedCount, totalDataTokens } =
+    applyDataBudget(datasets);
 
-  const sections = items.map((item, index) => {
-    const schema = item.dataset.sheets.map((sheet) => ({
-      sheetName: sheet.sheetName,
-      columns: sheet.columns,
-      rowCount: sheet.rowCount,
-    }));
+  const sections = items
+    .filter((item) => item.included)
+    .map((item, index) => {
+      const schema = item.dataset.sheets.map((sheet) => ({
+        sheetName: sheet.sheetName,
+        columns: sheet.columns,
+        rowCount: sheet.rowCount,
+      }));
 
-    const rows = item.dataset.sheets.map((sheet) => ({
-      sheetName: sheet.sheetName,
-      rows: item.includeFullRows
-        ? sheet.rows
-        : sheet.rows.slice(0, PREVIEW_ROW_LIMIT),
-    }));
+      const rows = item.dataset.sheets.map((sheet) => ({
+        sheetName: sheet.sheetName,
+        rows: sheet.rows.slice(0, PREVIEW_ROW_LIMIT),
+      }));
 
-    const truncationNote = item.includeFullRows
-      ? "Rows included in full."
-      : `Rows truncated to first ${PREVIEW_ROW_LIMIT} rows per sheet to stay within the shared ${MAX_DATA_TOKENS} token data budget.`;
+      return [
+        `Dataset ${index + 1}`,
+        `fileName: ${item.dataset.fileName}`,
+        `category: ${item.dataset.category}`,
+        `sheets: ${JSON.stringify(schema)}`,
+        `rows: ${JSON.stringify(rows)}`,
+        `note: rows are capped at first ${PREVIEW_ROW_LIMIT} rows per sheet for prompt size safety.`,
+      ].join("\n");
+    });
 
-    return [
-      `Dataset ${index + 1}`,
-      `fileName: ${item.dataset.fileName}`,
-      `category: ${item.dataset.category}`,
-      `sheets: ${JSON.stringify(schema)}`,
-      `rows: ${JSON.stringify(rows)}`,
-      `note: ${truncationNote}`,
-    ].join("\n");
-  });
+  const omissionNote =
+    omittedCount > 0
+      ? `Omitted ${omittedCount} active dataset(s) from prompt to stay within token budget. Ask the user to narrow scope if a missing dataset is needed.`
+      : "No datasets were omitted.";
 
   return [
-    `Uploaded datasets context (${items.length} active dataset(s)).`,
-    `Data token budget: ${MAX_DATA_TOKENS}. Estimated data tokens after truncation strategy: ${Math.ceil(totalDataTokens)}.`,
+    `Uploaded datasets context (${datasets.length} active dataset(s); ${includedCount} included in prompt).`,
+    `Data token budget: ${MAX_DATA_TOKENS}. Estimated data tokens sent: ${Math.ceil(totalDataTokens)}.`,
+    omissionNote,
     sections.join("\n\n"),
   ].join("\n\n");
 }
@@ -377,15 +374,28 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!appUser) {
-      [appUser] = await db
+      await db
         .insert(users)
         .values({ clerkId: userId, email: "unknown@konstruq.app" })
-        .returning({ id: users.id });
+        .onConflictDoNothing({ target: users.clerkId });
+
+      [appUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.clerkId, userId))
+        .limit(1);
     }
 
     if (!appUser) {
       return NextResponse.json(
         { error: "Unable to resolve user" },
+        { status: 500 },
+      );
+    }
+
+    if (!process.env.MISTRAL_API_KEY) {
+      return NextResponse.json(
+        { error: "MISTRAL_API_KEY is not configured" },
         { status: 500 },
       );
     }
@@ -403,7 +413,9 @@ export async function POST(request: NextRequest) {
           eq(uploadedDatasets.userId, appUser.id),
           eq(uploadedDatasets.isActive, true),
         ),
-      );
+      )
+      .orderBy(desc(uploadedDatasets.uploadedAt))
+      .limit(MAX_DATASETS_IN_PROMPT);
 
     const datasetContext: DatasetContextItem[] = datasets.map((dataset) => ({
       id: dataset.id,
@@ -428,7 +440,12 @@ export async function POST(request: NextRequest) {
       messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      getErrorMessage(error) {
+        console.error("Chat stream failed:", error);
+        return "AI response failed. Try a shorter question or upload fewer/lighter datasets.";
+      },
+    });
   } catch (error) {
     console.error("Chat route failed:", error);
     return NextResponse.json(
