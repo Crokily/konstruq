@@ -109,3 +109,18 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
 - ProCoreSyncButton client component for async sync
 - **Learnings:** Drizzle upsert needs manual find+update-or-insert pattern for Neon
 ---
+
+## 2026-02-28T01:30:00Z - US-101: Install AI SDK dependencies and create chat API route skeleton
+- Installed `ai` (^4.3.19) and `@ai-sdk/mistral` (^1.2.8) packages
+- Created `src/app/api/chat/route.ts` with:
+  - POST handler reading `{ messages }` from request body
+  - `streamText()` with `mistral('mistral-large-latest')` model
+  - Construction data analysis system prompt
+  - Returns `result.toDataStreamResponse()` for streaming
+- No auth checks yet (deferred to US-106)
+- Files changed: package.json, package-lock.json, src/app/api/chat/route.ts
+- **Learnings for future iterations:**
+  - `@ai-sdk/mistral` auto-reads MISTRAL_API_KEY from env — no explicit config needed
+  - AI SDK v4 uses `streamText()` + `toDataStreamResponse()` pattern
+  - Keep chat route simple — auth and data injection come in later stories
+---

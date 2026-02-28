@@ -21,7 +21,7 @@
         "Lint passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "env var MISTRAL_API_KEY should be added to .env.local. Use: import { mistral } from '@ai-sdk/mistral'; import { streamText } from 'ai';"
     },
     {
