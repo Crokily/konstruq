@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useChat } from "ai/react";
 import { Loader2, Send } from "lucide-react";
+import { MessageRenderer } from "@/components/chat/message-renderer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +72,7 @@ export default function ChatPage() {
                     key={message.id}
                     className={cn("flex", isUser ? "justify-end" : "justify-start")}
                   >
-                    <div className="max-w-[80%] space-y-1">
+                    <div className={cn("space-y-1", isUser ? "max-w-[80%]" : "max-w-[90%]")}>
                       <p
                         className={cn(
                           "text-xs font-medium",
@@ -82,13 +83,13 @@ export default function ChatPage() {
                       </p>
                       <div
                         className={cn(
-                          "rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words",
+                          "rounded-2xl px-4 py-3 text-sm leading-relaxed break-words",
                           isUser
-                            ? "bg-amber-500 text-slate-950"
-                            : "bg-slate-800 text-slate-100"
+                            ? "whitespace-pre-wrap bg-amber-500 text-slate-950"
+                            : "overflow-hidden bg-slate-800 text-slate-100"
                         )}
                       >
-                        {message.content}
+                        {isUser ? <>{message.content}</> : <MessageRenderer content={message.content} />}
                       </div>
                     </div>
                   </div>
