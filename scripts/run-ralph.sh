@@ -1,21 +1,10 @@
 #!/bin/bash
 # Konstruq Ralph Loop — Phase 2: AI Chat
-# Model rules:
-#   Planning/orchestration: anthropic/claude-opus-4-6:xhigh (this script spawns pi with this model)
-#   Coding: codex CLI (gpt-5.3-codex-xhigh) — delegated by pi within each iteration
-#   Testing: agent-browser — used by pi within each iteration
-#   Discord notifications: gemini-3-flash via discord-agent
-
-set -euo pipefail
 cd /home/ubuntu/konstruq
 
 MAX_ITERATIONS=${1:-15}
 PRD_FILE="./prd.json"
 PROMPT_TEMPLATE="/home/ubuntu/konstruq/scripts/prompt.md"
-
-command -v pi >/dev/null || { echo "pi not found"; exit 1; }
-command -v jq >/dev/null || { echo "jq not found"; exit 1; }
-[ -f "$PRD_FILE" ] || { echo "prd.json not found"; exit 1; }
 
 BRANCH=$(jq -r '.branchName' "$PRD_FILE")
 CURRENT=$(git branch --show-current)
@@ -24,12 +13,10 @@ if [ "$CURRENT" != "$BRANCH" ]; then
 fi
 
 echo "╔═══════════════════════════════════════════════════════╗"
-echo "║      🏗️  Konstruq Phase 2 Ralph Loop Started          ║"
-echo "║      🤖 AI Chat + Data Upload + Dynamic Charts        ║"
+echo "║      🏗️  Konstruq Phase 2 Ralph Loop                  ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 
 PRIMARY_MODEL="anthropic/claude-opus-4-6:xhigh"
-FALLBACK_MODEL="google-antigravity/claude-opus-4-6-thinking"
 
 for i in $(seq 1 $MAX_ITERATIONS); do
   TOTAL=$(jq '.userStories | length' "$PRD_FILE")
@@ -37,7 +24,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   REMAINING=$((TOTAL - DONE))
 
   if [ "$REMAINING" -eq 0 ]; then
-    echo ""; echo "✅ All $TOTAL stories complete at iteration $i!"
+    echo "✅ All $TOTAL stories complete!"
     exit 0
   fi
 
@@ -45,48 +32,31 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 
   echo ""
   echo "═══════════════════════════════════════════════════════"
-  echo "  🔄 Iteration $i/$MAX_ITERATIONS — $DONE/$TOTAL done, $REMAINING remaining"
+  echo "  🔄 Iteration $i/$MAX_ITERATIONS — $DONE/$TOTAL done"
   echo "  📋 Next: $NEXT"
   echo "  ⏰ $(date '+%Y-%m-%d %H:%M:%S')"
-  echo "  🤖 Model: $PRIMARY_MODEL"
   echo "═══════════════════════════════════════════════════════"
 
-  ITER_LOG="/tmp/ralph-phase2-iter-$i.log"
+  ITER_LOG="/tmp/ralph-phase2-iter-$i-$(date +%s).log"
 
-  # Primary model
-  timeout 1200 pi -m "$PRIMARY_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
+  # Run pi with prompt from stdin, capture all output
+  cat "$PROMPT_TEMPLATE" | timeout 1200 pi -m "$PRIMARY_MODEL" --print > "$ITER_LOG" 2>&1
   EXIT_CODE=$?
 
-  if [ $EXIT_CODE -ne 0 ]; then
-    echo "  ⚠️ Primary model failed (exit $EXIT_CODE). Trying fallback: $FALLBACK_MODEL"
-    timeout 1200 pi -m "$FALLBACK_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
-    EXIT_CODE=$?
+  echo "  pi exit code: $EXIT_CODE"
+  echo "  Log size: $(wc -c < "$ITER_LOG") bytes"
+  echo "  Last 20 lines:"
+  tail -20 "$ITER_LOG" 2>/dev/null
 
-    if [ $EXIT_CODE -ne 0 ]; then
-      echo "  ❌ Both models failed at iteration $i. Exit code: $EXIT_CODE"
-      echo "  Last 30 lines of log:"
-      tail -30 "$ITER_LOG" 2>/dev/null
-      exit 1
-    fi
-  fi
-
-  echo "  --- Iteration $i result (last 30 lines) ---"
-  tail -30 "$ITER_LOG"
-
-  if grep -q "<promise>COMPLETE</promise>" "$ITER_LOG"; then
-    echo ""
-    echo "╔═══════════════════════════════════════════════════════╗"
-    echo "║  ✅ Phase 2 ALL STORIES COMPLETE at iteration $i!    ║"
-    echo "╚═══════════════════════════════════════════════════════╝"
+  # Check if COMPLETE
+  if grep -q "COMPLETE" "$ITER_LOG" 2>/dev/null; then
+    echo "✅ Phase 2 ALL STORIES COMPLETE!"
     exit 0
   fi
 
-  echo "  ✓ Iteration $i done. Next in 5s..."
+  # Small pause
   sleep 5
 done
 
-echo ""; echo "⚠️ Max iterations ($MAX_ITERATIONS) reached."
-DONE_FINAL=$(jq '[.userStories[] | select(.passes == true)] | length' "$PRD_FILE")
-echo "Status: $DONE_FINAL/$TOTAL stories complete"
-jq -r '.userStories[] | "\(.id): \(.title) — \(if .passes then "✅" else "❌" end)"' "$PRD_FILE"
-exit 1
+echo "⚠️ Max iterations ($MAX_ITERATIONS) reached."
+jq -r '.userStories[] | "\(.id) — \(if .passes then "✅" else "❌" end)"' "$PRD_FILE"

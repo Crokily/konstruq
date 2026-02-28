@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   Building2,
+  Database,
   LayoutDashboard,
   FolderKanban,
   DollarSign,
@@ -28,6 +29,11 @@ const navItems = [
     label: "Financials",
     href: "/financials",
     icon: DollarSign,
+  },
+  {
+    label: "Data Sources",
+    href: "/data-sources",
+    icon: Database,
   },
   {
     label: "Integrations",
