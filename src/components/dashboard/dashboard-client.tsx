@@ -363,6 +363,7 @@ export function DashboardClient({
 }: DashboardClientProps) {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -386,8 +387,11 @@ export function DashboardClient({
       }
     }
 
-    setStatus("loading");
+    if (!dashboard) {
+      setStatus("loading");
+    }
     setMessage("");
+    setIsRefreshing(true);
 
     try {
       const nextDashboard = await requestDashboard(cacheKey, projectId, variant);
@@ -406,6 +410,10 @@ export function DashboardClient({
 
       setMessage(errorMessage(error));
       setStatus("error");
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsRefreshing(false);
+      }
     }
   });
 
@@ -421,7 +429,7 @@ export function DashboardClient({
   }
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
-  const controlsDisabled = status === "loading" || isPending;
+  const controlsDisabled = (status === "loading" && !dashboard) || isPending;
   const groupedCharts = useMemo(() => {
     if (!dashboard) {
       return [] as Array<[string, DashboardResponse["charts"]]>;
@@ -482,14 +490,14 @@ export function DashboardClient({
           <RefreshCw
             className={cn(
               "h-4 w-4",
-              controlsDisabled ? "animate-spin" : "",
+              isRefreshing || controlsDisabled ? "animate-spin" : "",
             )}
           />
           Refresh
         </Button>
       </div>
 
-      {status === "loading" ? <PageLoading label="Loading dashboard" /> : null}
+      {status === "loading" && !dashboard ? <PageLoading label="Loading dashboard" /> : null}
 
       {status === "error" ? (
         <DashboardError
