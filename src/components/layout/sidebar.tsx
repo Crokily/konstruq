@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   Building2,
+  Database,
   LayoutDashboard,
   FolderKanban,
   DollarSign,
   Settings,
   Plug,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -31,6 +33,16 @@ const navItems = [
     icon: DollarSign,
   },
   {
+    label: "AI Chat",
+    href: "/chat",
+    icon: MessageSquare,
+  },
+  {
+    label: "Data Sources",
+    href: "/data-sources",
+    icon: Database,
+  },
+  {
     label: "Integrations",
     href: "/integrations",
     icon: Plug,
@@ -40,6 +52,11 @@ const navItems = [
     href: "/settings",
     icon: Settings,
   },
+];
+
+const dataSources = [
+  { name: "Procore", connected: false },
+  { name: "Sage Intacct", connected: false },
 ];
 
 export function Sidebar() {
@@ -85,8 +102,13 @@ export function Sidebar() {
           Data Sources
         </p>
         <div className="space-y-1.5">
-          <DataSourceBadge name="Procore" connected={false} />
-          <DataSourceBadge name="Sage Intacct" connected={false} />
+          {dataSources.map((dataSource) => (
+            <DataSourceBadge
+              key={dataSource.name}
+              name={dataSource.name}
+              connected={dataSource.connected}
+            />
+          ))}
         </div>
       </div>
 

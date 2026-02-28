@@ -57,3 +57,19 @@ export const syncedProjects = pgTable("synced_projects", {
   data: jsonb("data").notNull(), // Full API response cached
   syncedAt: timestamp("synced_at").defaultNow().notNull(),
 });
+
+// ============================================================
+// Uploaded Datasets (user CSV/XLSX uploads for AI chat analysis)
+// ============================================================
+export const uploadedDatasets = pgTable("uploaded_datasets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  sheets: jsonb("sheets").notNull(),
+  meta: jsonb("meta"),
+  isActive: boolean("is_active").default(true).notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
