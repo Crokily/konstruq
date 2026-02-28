@@ -126,7 +126,7 @@
         "Verify in browser"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/components/chat/chat-runtime-provider.tsx to accept projectId prop and pass in useChat body. Modify src/app/(dashboard)/chat/page.tsx for the selector UI and state. Modify src/lib/chat/history.ts Conversation type. The ChatRuntimeProvider is in the dashboard layout so it wraps all pages - may need to refactor to accept dynamic projectId."
     },
     {

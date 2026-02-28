@@ -2,7 +2,7 @@ import { mistral } from "@ai-sdk/mistral";
 import { auth } from "@clerk/nextjs/server";
 import { generateText } from "ai";
 import { and, desc, eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   buildDatasetsContext,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/ai/dataset-context";
 import { db } from "@/lib/db";
 import { resolveAppUserId } from "@/lib/db/app-user";
-import { uploadedDatasets } from "@/lib/db/schema";
+import { projects, uploadedDatasets } from "@/lib/db/schema";
 import {
   parseDashboardContent,
   type DashboardResponse,
@@ -105,7 +105,7 @@ function parseJsonText(text: string): unknown {
   throw new Error("AI response was not valid JSON");
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -129,6 +129,37 @@ export async function POST() {
       );
     }
 
+    let projectId: string | undefined;
+    try {
+      const body = (await request.json()) as { projectId?: string };
+      projectId =
+        typeof body.projectId === "string" && body.projectId.length > 0
+          ? body.projectId
+          : undefined;
+    } catch {
+      // No body or invalid JSON means no project filter.
+    }
+
+    if (projectId) {
+      const ownedProject = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(and(eq(projects.id, projectId), eq(projects.userId, appUserId)))
+        .limit(1);
+
+      if (ownedProject.length === 0) {
+        return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      }
+    }
+
+    const conditions = [
+      eq(uploadedDatasets.userId, appUserId),
+      eq(uploadedDatasets.isActive, true),
+    ];
+    if (projectId) {
+      conditions.push(eq(uploadedDatasets.projectId, projectId));
+    }
+
     const datasets = await db
       .select({
         id: uploadedDatasets.id,
@@ -137,12 +168,7 @@ export async function POST() {
         sheets: uploadedDatasets.sheets,
       })
       .from(uploadedDatasets)
-      .where(
-        and(
-          eq(uploadedDatasets.userId, appUserId),
-          eq(uploadedDatasets.isActive, true),
-        ),
-      )
+      .where(and(...conditions))
       .orderBy(desc(uploadedDatasets.uploadedAt));
 
     const datasetContext: DatasetContextItem[] = datasets.map((dataset) => ({

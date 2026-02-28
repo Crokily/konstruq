@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 interface DashboardClientProps {
   datasetIds: string[];
   firstName?: string | null;
+  projectId?: string;
 }
 
 interface ApiErrorPayload {
@@ -103,13 +104,20 @@ function clearCache() {
   window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
 }
 
-async function requestDashboard(cacheKey: string): Promise<DashboardResponse> {
-  if (inFlightRequest && inFlightRequestKey === cacheKey) {
+async function requestDashboard(
+  cacheKey: string,
+  projectId?: string,
+): Promise<DashboardResponse> {
+  const requestKey = `${cacheKey}:${projectId ?? ""}`;
+
+  if (inFlightRequest && inFlightRequestKey === requestKey) {
     return inFlightRequest;
   }
 
   const request = fetch("/api/dashboard/generate", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(projectId ? { projectId } : {}),
     cache: "no-store",
   }).then(async (response) => {
     const payload = (await response.json().catch(() => null)) as
@@ -138,7 +146,7 @@ async function requestDashboard(cacheKey: string): Promise<DashboardResponse> {
     return parsed;
   });
 
-  inFlightRequestKey = cacheKey;
+  inFlightRequestKey = requestKey;
   inFlightRequest = request;
 
   try {
@@ -253,6 +261,7 @@ function DashboardError({
 export function DashboardClient({
   datasetIds,
   firstName,
+  projectId,
 }: DashboardClientProps) {
   const cacheKey = buildDashboardCacheKey(datasetIds);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -284,7 +293,7 @@ export function DashboardClient({
     setMessage("");
 
     try {
-      const nextDashboard = await requestDashboard(cacheKey);
+      const nextDashboard = await requestDashboard(cacheKey, projectId);
 
       if (requestId !== requestIdRef.current) {
         return;
@@ -305,7 +314,7 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, refreshKey]);
+  }, [cacheKey, projectId, refreshKey]);
 
   function handleRefresh() {
     clearCache();
