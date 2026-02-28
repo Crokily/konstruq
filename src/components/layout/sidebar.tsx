@@ -12,6 +12,7 @@ import {
   Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   {
@@ -45,11 +46,14 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-800 bg-slate-950">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-800">
-        <Building2 className="h-7 w-7 text-amber-500" />
-        <span className="text-lg font-bold tracking-tight">Konstruq</span>
+      <div className="flex items-center justify-between gap-2.5 px-6 py-5 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <Building2 className="h-7 w-7 text-amber-500" />
+          <span className="text-lg font-bold tracking-tight">Konstruq</span>
+        </div>
+        <ThemeToggle />
       </div>
 
       {/* Navigation */}
@@ -65,7 +69,7 @@ export function Sidebar() {
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-amber-500/10 text-amber-500"
-                  : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
               <item.icon className="h-4.5 w-4.5" />
@@ -76,8 +80,8 @@ export function Sidebar() {
       </nav>
 
       {/* Data sources status */}
-      <div className="px-4 py-3 border-t border-slate-800">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+      <div className="px-4 py-3 border-t border-border">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
           Data Sources
         </p>
         <div className="space-y-1.5">
@@ -87,7 +91,7 @@ export function Sidebar() {
       </div>
 
       {/* User */}
-      <div className="flex items-center gap-3 px-4 py-4 border-t border-slate-800">
+      <div className="flex items-center gap-3 px-4 py-4 border-t border-border">
         <UserButton
           appearance={{
             elements: {
@@ -95,7 +99,7 @@ export function Sidebar() {
             },
           }}
         />
-        <span className="text-sm text-slate-400">Account</span>
+        <span className="text-sm text-muted-foreground">Account</span>
       </div>
     </aside>
   );
@@ -110,17 +114,17 @@ function DataSourceBadge({
 }) {
   return (
     <div className="flex items-center justify-between text-xs">
-      <span className="text-slate-400">{name}</span>
+      <span className="text-muted-foreground">{name}</span>
       <span
         className={cn(
           "flex items-center gap-1",
-          connected ? "text-emerald-400" : "text-slate-600"
+          connected ? "text-emerald-500" : "text-muted-foreground"
         )}
       >
         <span
           className={cn(
             "h-1.5 w-1.5 rounded-full",
-            connected ? "bg-emerald-400" : "bg-slate-600"
+            connected ? "bg-emerald-500" : "bg-muted-foreground"
           )}
         />
         {connected ? "Connected" : "Not connected"}

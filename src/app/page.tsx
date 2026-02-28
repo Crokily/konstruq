@@ -8,6 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function LandingPage() {
   const { userId } = await auth();
@@ -24,6 +25,7 @@ export default async function LandingPage() {
           <span className="text-xl font-bold tracking-tight">Konstruq</span>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link href="/sign-in">
             <Button variant="ghost" size="sm">
               Sign In

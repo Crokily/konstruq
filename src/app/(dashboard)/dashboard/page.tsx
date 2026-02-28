@@ -17,7 +17,7 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">
           Welcome back, {user?.firstName || "there"}
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Here&apos;s your construction portfolio overview.
         </p>
       </div>
@@ -59,13 +59,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Empty state - prompt to connect data sources */}
-      <Card className="border-dashed border-slate-700 bg-slate-900/30 p-12 text-center">
+      <Card className="border-dashed p-12 text-center">
         <div className="mx-auto max-w-md">
-          <Building2 className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">
             Connect your data sources
           </h2>
-          <p className="text-slate-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             Link your Procore and Sage Intacct accounts to start seeing
             real-time construction analytics.
           </p>
@@ -99,13 +99,13 @@ function KPICard({
   iconBg: string;
 }) {
   return (
-    <Card className="bg-slate-900/50 border-slate-800 p-5">
+    <Card className="p-5">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-slate-400">{title}</span>
+        <span className="text-sm text-muted-foreground">{title}</span>
         <div className={`${iconBg} ${iconColor} rounded-lg p-2`}>{icon}</div>
       </div>
       <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
+      <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
     </Card>
   );
 }
