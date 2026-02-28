@@ -34,7 +34,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "sheets column stores: [{sheetName: string, columns: string[], rowCount: number, rows: Record<string,unknown>[]}]. Use existing drizzle.config.ts which loads .env.local via dotenv."
     },
     {

@@ -124,3 +124,14 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - AI SDK v4 uses `streamText()` + `toDataStreamResponse()` pattern
   - Keep chat route simple — auth and data injection come in later stories
 ---
+
+## 2026-02-28T01:35:00Z - US-102: Database schema for uploaded datasets and chat sessions
+- Added `uploaded_datasets` table to src/lib/db/schema.ts
+- Columns: id(uuid PK), userId(uuid FK→users), category(varchar), fileName(varchar), sheets(jsonb), meta(jsonb), isActive(boolean), uploadedAt(timestamp)
+- Schema pushed to Neon via `npm run db:push` — table created successfully
+- Files changed: src/lib/db/schema.ts
+- **Learnings for future iterations:**
+  - userId references users.id (uuid FK) — upload/chat routes will need to resolve Clerk userId to app user uuid
+  - sheets column stores full parsed row data as JSON array — enables direct injection into LLM context
+  - category field is 'pm' or 'erp' for organizing uploads
+---
