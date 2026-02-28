@@ -50,3 +50,9 @@ Started: 2026-02-28
 - Files changed: prd.json,src/components/charts/chart-data-table.tsx,src/components/chat/chart-block.tsx,src/components/dashboard/dashboard-client.tsx,
 - Summary: Implemented US-005 only.  **Modified/Created Files** - Created: [src/components/charts/chart-data-table.tsx](/home/ubuntu/konstruq/src/components/charts/chart-data-table.tsx) - Modified: [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 
 ---
+
+## 2026-02-28 17:22 UTC - US-006: Database schema for custom dashboards and widgets
+- Codex execution: 74s
+- Files changed: prd.json,src/lib/db/schema.ts,
+- Summary: Implemented US-006 exactly as requested.  **Modified Files** - [src/lib/db/schema.ts](/home/ubuntu/konstruq/src/lib/db/schema.ts)  
+---

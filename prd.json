@@ -104,7 +104,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing schema patterns (uuid PKs, FK references, timestamps). Place new tables after the uploadedDatasets section. widgetType values: 'chart' or 'kpi'. config stores the full ChartSpec or KPIItem JSON."
     },
     {
