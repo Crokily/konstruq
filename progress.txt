@@ -153,3 +153,21 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - XLSX.utils.sheet_to_json with header:1 gets column names from first row
   - Papa.parse result.meta.fields contains headers when header:true
 ---
+
+## 2026-02-28T01:58:00Z - US-104: Data Sources page — upload UI and dataset list
+- Server component page at src/app/(dashboard)/data-sources/page.tsx loads datasets from DB via Clerk auth
+- Client component data-sources-client.tsx handles upload UI, file picker, delete, status feedback
+- Two sections: PM Data (Project Management) and ERP Data (Financial), each with upload area and dataset list
+- Upload calls POST /api/upload with category, shows loading spinner, success/error messages
+- Dataset list shows fileName, sheet count, row count, upload date with date formatting
+- Delete button per dataset calls DELETE /api/upload/[id]/route.ts
+- DELETE route at src/app/api/upload/[id]/route.ts with Clerk auth + ownership check
+- Data Sources link added to sidebar with Database icon (amber active state)
+- Dark theme consistent: slate-950 bg, slate-900/50 cards, amber-500 buttons, dashed upload border
+- Files changed: src/app/(dashboard)/data-sources/page.tsx, src/app/(dashboard)/data-sources/data-sources-client.tsx, src/app/api/upload/[id]/route.ts, src/components/layout/sidebar.tsx
+- **Learnings for future iterations:**
+  - Code was pre-existing from a previous incomplete iteration — quality checks (tsc + eslint) confirmed clean
+  - Clerk sign-in for browser testing: use Backend API to create user + session, then create sign_in_token. Clerk 2FA email verification blocks headless login with password. Created fresh test user (test-konstruq@example.com) via API
+  - Auto-create user pattern (from US-103) is used in both server component and delete route — consistent pattern
+  - Server component fetches data, client component manages state — good separation for upload interactivity
+---

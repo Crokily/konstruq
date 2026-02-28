@@ -74,7 +74,7 @@
         "Verify in browser"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Use 'use client' for upload interactions. Server component for initial data load. Add to sidebar in src/components/layout/sidebar.tsx. Use existing Card/Button from shadcn."
     },
     {
