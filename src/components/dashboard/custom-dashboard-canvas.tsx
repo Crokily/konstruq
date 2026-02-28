@@ -37,7 +37,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CHART_STYLE_SPEC,
@@ -397,15 +396,9 @@ function CustomDashboardKpiCard({
     >
       <CardContent className="px-5">
         {refreshing ? (
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-full space-y-3">
-                <Skeleton className="h-4 w-28 bg-white/10" />
-                <Skeleton className="h-10 w-36 bg-white/15" />
-              </div>
-              <Skeleton className="h-8 w-8 rounded-md bg-white/10" />
-            </div>
-            <Skeleton className="h-3 w-full max-w-[220px] bg-white/10" />
+          <div className="flex min-h-24 items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Refreshing KPI...
           </div>
         ) : (
           <>
@@ -453,16 +446,10 @@ function CustomDashboardChartCard({
       <CardHeader className="pb-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           {refreshing ? (
-            <>
-              <div className="w-full space-y-2">
-                <Skeleton className="h-6 w-40 bg-muted/70" />
-                <Skeleton className="h-4 w-32 bg-muted/60" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-7 w-16 rounded-full bg-muted/60" />
-                <Skeleton className="h-8 w-8 rounded-md bg-muted/60" />
-              </div>
-            </>
+            <div className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              Refreshing chart...
+            </div>
           ) : (
             <>
               <div className="space-y-1">
@@ -486,12 +473,11 @@ function CustomDashboardChartCard({
       </CardHeader>
       <CardContent className="pb-6">
         {refreshing ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-24 rounded-md bg-muted/60" />
-              <Skeleton className="h-9 w-24 rounded-md bg-muted/50" />
+          <div className="flex min-h-72 items-center justify-center rounded-lg border border-border/60 bg-background">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              Loading chart...
             </div>
-            <Skeleton className="h-72 w-full rounded-lg bg-muted/60" />
           </div>
         ) : (
           <>

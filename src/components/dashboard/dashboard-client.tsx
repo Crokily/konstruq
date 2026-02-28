@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageLoading } from "@/components/ui/page-loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DASHBOARD_STORAGE_KEY,
@@ -244,33 +244,6 @@ function DynamicKPICard({
         </p>
       </CardContent>
     </Card>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-4 gap-4 max-2xl:grid-cols-2 max-md:grid-cols-1">
-        {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton
-            key={`dashboard-kpi-skeleton-${index}`}
-            className="h-28 w-full rounded-xl border border-slate-800 bg-slate-800/70"
-          />
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div
-            key={`dashboard-chart-skeleton-${index}`}
-            className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/50 p-6"
-          >
-            <Skeleton className="h-6 w-40 bg-slate-800" />
-            <Skeleton className="h-4 w-56 bg-slate-800" />
-            <Skeleton className="h-72 w-full rounded-lg bg-slate-800/70" />
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -516,7 +489,7 @@ export function DashboardClient({
         </Button>
       </div>
 
-      {status === "loading" ? <DashboardSkeleton /> : null}
+      {status === "loading" ? <PageLoading label="Loading dashboard" /> : null}
 
       {status === "error" ? (
         <DashboardError
