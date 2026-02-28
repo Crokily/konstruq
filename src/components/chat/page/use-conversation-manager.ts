@@ -26,6 +26,7 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const hasInitializedRef = useRef(false);
+  const lastSyncedSignatureRef = useRef("");
 
   useEffect(() => {
     if (hasInitializedRef.current) {
@@ -60,6 +61,15 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
 
     const nextMessages = toStoredMessages(messages);
     const nextTitle = deriveConversationTitle(nextMessages);
+    const nextSignature = `${activeConversationId}::${nextTitle}::${nextMessages
+      .map((message) => `${message.role}:${message.content}`)
+      .join("\u001f")}`;
+
+    if (lastSyncedSignatureRef.current === nextSignature) {
+      return;
+    }
+
+    let updatedState = false;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConversations((prev) => {
@@ -79,8 +89,13 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
 
       const updated = [...prev];
       updated[index] = { ...current, messages: nextMessages, title: nextTitle, updatedAt: new Date().toISOString() };
+      updatedState = true;
       return updated.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     });
+
+    if (updatedState) {
+      lastSyncedSignatureRef.current = nextSignature;
+    }
   }, [activeConversationId, isReady, messages]);
 
   useEffect(() => {
@@ -133,26 +148,24 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
   };
 
   const deleteConversation = (conversationId: string) => {
-    setConversations((prev) => {
-      const remaining = prev.filter((conversation) => conversation.id !== conversationId);
+    const remaining = conversations.filter((conversation) => conversation.id !== conversationId);
+    if (remaining.length === 0) {
+      const initial = {
+        ...defaultConversation(),
+        projectId: projectId || undefined,
+      };
+      setConversations([initial]);
+      setActiveConversationId(initial.id);
+      setMessages([]);
+      return;
+    }
 
-      if (remaining.length === 0) {
-        const initial = {
-          ...defaultConversation(),
-          projectId: projectId || undefined,
-        };
-        setActiveConversationId(initial.id);
-        setMessages([]);
-        return [initial];
-      }
+    setConversations(remaining);
 
-      if (conversationId === activeConversationId) {
-        setActiveConversationId(remaining[0].id);
-        setMessages(remaining[0].messages);
-      }
-
-      return remaining;
-    });
+    if (conversationId === activeConversationId) {
+      setActiveConversationId(remaining[0].id);
+      setMessages(remaining[0].messages);
+    }
   };
 
   const clearCurrentConversation = () => {
