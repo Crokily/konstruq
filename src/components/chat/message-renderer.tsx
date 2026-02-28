@@ -196,19 +196,19 @@ function getKpiTrendInfo(trend: KpiItem["trend"]) {
     return { symbol: "▼", className: "text-rose-400" };
   }
 
-  return { symbol: "—", className: "text-slate-500" };
+  return { symbol: "—", className: "text-muted-foreground" };
 }
 
 function FallbackCodeBlock({ content }: { content: string }) {
   return (
-    <pre className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs leading-relaxed text-slate-200">
+    <pre className="overflow-x-auto rounded-lg border border-border bg-muted px-3 py-2 text-xs leading-relaxed text-foreground">
       {content}
     </pre>
   );
 }
 
 const markdownComponents: Components = {
-  p: ({ children }) => <p className="text-sm leading-relaxed text-slate-100">{children}</p>,
+  p: ({ children }) => <p className="text-sm leading-relaxed text-foreground">{children}</p>,
   a: ({ children, href }) => (
     <a
       href={href}
@@ -219,19 +219,19 @@ const markdownComponents: Components = {
       {children}
     </a>
   ),
-  strong: ({ children }) => <strong className="font-semibold text-slate-50">{children}</strong>,
-  em: ({ children }) => <em className="text-slate-200">{children}</em>,
-  ul: ({ children }) => <ul className="list-disc space-y-1 pl-5 text-slate-100">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5 text-slate-100">{children}</ol>,
+  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+  em: ({ children }) => <em className="text-foreground">{children}</em>,
+  ul: ({ children }) => <ul className="list-disc space-y-1 pl-5 text-foreground">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5 text-foreground">{children}</ol>,
   li: ({ children }) => <li>{children}</li>,
-  h1: ({ children }) => <h1 className="text-xl font-semibold text-slate-100">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-lg font-semibold text-slate-100">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-base font-semibold text-slate-100">{children}</h3>,
+  h1: ({ children }) => <h1 className="text-xl font-semibold text-foreground">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-lg font-semibold text-foreground">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-base font-semibold text-foreground">{children}</h3>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-slate-600 pl-3 italic text-slate-300">{children}</blockquote>
+    <blockquote className="border-l-2 border-border pl-3 italic text-muted-foreground">{children}</blockquote>
   ),
   pre: ({ children }) => (
-    <pre className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-2 text-xs text-slate-100">
+    <pre className="overflow-x-auto rounded-lg border border-border bg-muted px-3 py-2 text-xs text-foreground">
       {children}
     </pre>
   ),
@@ -243,21 +243,21 @@ const markdownComponents: Components = {
     }
 
     return (
-      <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[0.85em] text-slate-100">
+      <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-foreground">
         {children}
       </code>
     );
   },
   table: ({ children }) => (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-slate-700 text-left text-sm text-slate-100">
+      <table className="w-full border-collapse border border-border text-left text-sm text-foreground">
         {children}
       </table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-slate-800/70">{children}</thead>,
-  th: ({ children }) => <th className="border border-slate-700 px-2 py-1.5 font-medium">{children}</th>,
-  td: ({ children }) => <td className="border border-slate-700 px-2 py-1.5 text-slate-200">{children}</td>,
+  thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
+  th: ({ children }) => <th className="border border-border px-2 py-1.5 font-medium">{children}</th>,
+  td: ({ children }) => <td className="border border-border px-2 py-1.5 text-foreground">{children}</td>,
 };
 
 export function MessageRenderer({ content }: MessageRendererProps) {
@@ -290,7 +290,7 @@ export function MessageRenderer({ content }: MessageRendererProps) {
           return (
             <div
               key={segment.key}
-              className="overflow-hidden rounded-xl border border-slate-700/90 bg-slate-900/50 p-3"
+              className="overflow-hidden rounded-xl border border-border bg-muted/30 p-3"
             >
               <ChartFromSpec spec={parsedSpec} />
             </div>
@@ -305,14 +305,14 @@ export function MessageRenderer({ content }: MessageRendererProps) {
           }
 
           return (
-            <div key={segment.key} className="overflow-x-auto rounded-lg border border-slate-700">
+            <div key={segment.key} className="overflow-x-auto rounded-lg border border-border">
               <Table className="min-w-full">
-                <TableHeader className="bg-slate-800/50 [&_tr]:border-b-slate-700">
-                  <TableRow className="border-slate-700 hover:bg-transparent">
+                <TableHeader className="bg-muted [&_tr]:border-b-border">
+                  <TableRow className="border-border hover:bg-transparent">
                     {parsedSpec.headers.map((header, headerIndex) => (
                       <TableHead
                         key={`${segment.key}-header-${headerIndex}`}
-                        className="px-3 py-2 text-xs uppercase tracking-wide text-slate-300"
+                        className="px-3 py-2 text-xs uppercase tracking-wide text-muted-foreground"
                       >
                         {header}
                       </TableHead>
@@ -321,11 +321,11 @@ export function MessageRenderer({ content }: MessageRendererProps) {
                 </TableHeader>
                 <TableBody>
                   {parsedSpec.rows.map((row, rowIndex) => (
-                    <TableRow key={`${segment.key}-row-${rowIndex}`} className="border-slate-700 hover:bg-slate-800/30">
+                    <TableRow key={`${segment.key}-row-${rowIndex}`} className="border-border hover:bg-muted/60">
                       {row.map((cell, cellIndex) => (
                         <TableCell
                           key={`${segment.key}-cell-${rowIndex}-${cellIndex}`}
-                          className="px-3 py-2 text-sm text-slate-200"
+                          className="px-3 py-2 text-sm text-foreground"
                         >
                           {cell}
                         </TableCell>
@@ -353,19 +353,19 @@ export function MessageRenderer({ content }: MessageRendererProps) {
                 return (
                   <div
                     key={`${segment.key}-kpi-${itemIndex}`}
-                    className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2.5"
+                    className="rounded-lg border border-border bg-muted px-3 py-2.5"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">{item.label}</p>
-                        <p className="text-lg font-semibold text-slate-100">{item.value}</p>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                        <p className="text-lg font-semibold text-foreground">{item.value}</p>
                       </div>
                       <span className={`pt-0.5 text-sm ${trendInfo.className}`} aria-hidden>
                         {trendInfo.symbol}
                       </span>
                     </div>
                     {item.description ? (
-                      <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
                     ) : null}
                   </div>
                 );

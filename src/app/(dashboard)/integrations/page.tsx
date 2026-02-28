@@ -92,22 +92,22 @@ export default async function IntegrationsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2">
           <Plug className="h-5 w-5 text-amber-500" />
-          <h1 className="text-2xl font-bold text-slate-100">Integrations</h1>
+          <h1 className="text-2xl font-bold">Integrations</h1>
         </div>
-        <p className="mt-1 text-slate-400">
+        <p className="mt-1 text-muted-foreground">
           Connect your construction data sources
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="space-y-4 pb-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg border border-slate-700/80 bg-slate-900 p-2">
+                <div className="rounded-lg border border-border bg-muted p-2">
                   <Building2 className="h-5 w-5 text-amber-500" />
                 </div>
-                <CardTitle className="text-slate-100">Procore</CardTitle>
+                <CardTitle>Procore</CardTitle>
               </div>
               {isProcoreConnected ? (
                 <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-300">
@@ -117,17 +117,17 @@ export default async function IntegrationsPage() {
               ) : (
                 <Badge
                   variant="outline"
-                  className="border-slate-700 bg-slate-900 text-slate-400"
+                  className="border-border bg-muted text-muted-foreground"
                 >
                   Not Connected
                 </Badge>
               )}
             </div>
-            <CardDescription className="text-slate-400">
+            <CardDescription>
               Sync projects, budgets, RFIs, change orders, and schedules
             </CardDescription>
             {isProcoreConnected && lastSyncLabel ? (
-              <div className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 Last sync {lastSyncLabel}
               </div>
@@ -138,7 +138,7 @@ export default async function IntegrationsPage() {
               {procoreIntegration.features.map((feature) => (
                 <li
                   key={feature}
-                  className="flex items-center gap-2 text-sm text-slate-300"
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
                 >
                   <CheckCircle className="h-4 w-4 text-emerald-400" />
                   {feature}
@@ -150,7 +150,7 @@ export default async function IntegrationsPage() {
             ) : (
               <Button
                 asChild
-                className="w-full bg-amber-500 text-slate-950 hover:bg-amber-400"
+                className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400"
               >
                 <Link href="/api/procore/auth">
                   Connect Procore
@@ -161,20 +161,20 @@ export default async function IntegrationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="space-y-4 pb-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg border border-slate-700/80 bg-slate-900 p-2">
+                <div className="rounded-lg border border-border bg-muted p-2">
                   <DollarSign className="h-5 w-5 text-cyan-400" />
                 </div>
-                <CardTitle className="text-slate-100">Sage Intacct</CardTitle>
+                <CardTitle>Sage Intacct</CardTitle>
               </div>
               <Badge className="border-sky-500/20 bg-sky-500/10 text-sky-200">
                 Coming Soon
               </Badge>
             </div>
-            <CardDescription className="text-slate-400">
+            <CardDescription>
               Access GL, AP/AR, cost types, and project financials
             </CardDescription>
           </CardHeader>
@@ -183,7 +183,7 @@ export default async function IntegrationsPage() {
               {sageIntacctIntegration.features.map((feature) => (
                 <li
                   key={feature}
-                  className="flex items-center gap-2 text-sm text-slate-300"
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
                 >
                   <CheckCircle className="h-4 w-4 text-cyan-400" />
                   {feature}
@@ -192,7 +192,7 @@ export default async function IntegrationsPage() {
             </ul>
             <Button
               disabled
-              className="w-full bg-slate-800 text-slate-400 hover:bg-slate-800"
+              className="w-full bg-muted text-muted-foreground hover:bg-muted"
             >
               Coming Soon
             </Button>

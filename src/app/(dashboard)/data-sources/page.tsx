@@ -123,8 +123,8 @@ export default async function DataSourcesPage() {
   return (
     <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-100">Data Sources</h1>
-        <p className="mt-1 text-slate-400">
+        <h1 className="text-2xl font-bold">Data Sources</h1>
+        <p className="mt-1 text-muted-foreground">
           Upload and manage your project data files
         </p>
       </div>

@@ -53,21 +53,24 @@ const budgetStatusByHealth: Record<ProjectHealth, BudgetStatus> = {
 };
 
 const badgeClassByHealth: Record<ProjectHealth, string> = {
-  good: "border-emerald-400/30 bg-emerald-500/15 text-emerald-300",
-  warning: "border-amber-400/30 bg-amber-500/15 text-amber-300",
-  critical: "border-rose-400/30 bg-rose-500/15 text-rose-300",
+  good:
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  warning:
+    "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  critical:
+    "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
 function SortIndicator({ direction }: { direction: false | "asc" | "desc" }) {
   if (direction === "asc") {
-    return <ArrowUp className="h-3.5 w-3.5 text-slate-300" />;
+    return <ArrowUp className="h-3.5 w-3.5 text-foreground" />;
   }
 
   if (direction === "desc") {
-    return <ArrowDown className="h-3.5 w-3.5 text-slate-300" />;
+    return <ArrowDown className="h-3.5 w-3.5 text-foreground" />;
   }
 
-  return <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />;
+  return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />;
 }
 
 export function ProjectTable({ projects, matrix }: ProjectTableProps) {
@@ -105,7 +108,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Project Name
@@ -113,7 +116,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
           </button>
         ),
         cell: ({ row }) => (
-          <div className="font-medium text-slate-100">{row.original.name}</div>
+          <div className="font-medium text-foreground">{row.original.name}</div>
         ),
       },
       {
@@ -121,21 +124,21 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Type
             <SortIndicator direction={column.getIsSorted()} />
           </button>
         ),
-        cell: ({ row }) => <span className="text-slate-300">{row.original.type}</span>,
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.type}</span>,
       },
       {
         accessorKey: "contractValue",
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Contract Value ($)
@@ -143,7 +146,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-slate-300">
+          <span className="text-muted-foreground">
             {currencyFormatter.format(row.original.contractValue)}
           </span>
         ),
@@ -153,7 +156,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             % Complete
@@ -165,13 +168,13 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
 
           return (
             <div className="flex min-w-[180px] items-center gap-3">
-              <div className="h-2 w-full rounded-full bg-slate-800">
+              <div className="h-2 w-full rounded-full bg-muted">
                 <div
                   className="h-2 rounded-full bg-amber-500"
                   style={{ width: `${Math.max(0, Math.min(100, percent))}%` }}
                 />
               </div>
-              <span className="w-10 text-right text-xs font-medium text-slate-300">
+              <span className="w-10 text-right text-xs font-medium text-muted-foreground">
                 {percent}%
               </span>
             </div>
@@ -183,7 +186,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Budget Status
@@ -204,14 +207,14 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
         header: ({ column }) => (
           <button
             type="button"
-            className="flex items-center gap-1.5 text-slate-300 transition hover:text-slate-100"
+            className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Stage
             <SortIndicator direction={column.getIsSorted()} />
           </button>
         ),
-        cell: ({ row }) => <span className="text-slate-300">{row.original.stage}</span>,
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.stage}</span>,
       },
     ],
     []
@@ -234,11 +237,11 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
     <Table className="w-full">
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id} className="border-slate-800 hover:bg-transparent">
+          <TableRow key={headerGroup.id} className="border-border hover:bg-transparent">
             {headerGroup.headers.map((header) => (
               <TableHead
                 key={header.id}
-                className="h-11 text-xs uppercase tracking-wide text-slate-400"
+                className="h-11 text-xs uppercase tracking-wide text-muted-foreground"
               >
                 {header.isPlaceholder
                   ? null
@@ -250,8 +253,8 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.length === 0 ? (
-          <TableRow className="border-slate-800 hover:bg-transparent">
-            <TableCell colSpan={columns.length} className="h-24 text-center text-slate-500">
+          <TableRow className="border-border hover:bg-transparent">
+            <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
               No projects found.
             </TableCell>
           </TableRow>
@@ -259,7 +262,7 @@ export function ProjectTable({ projects, matrix }: ProjectTableProps) {
           table.getRowModel().rows.map((row) => (
             <TableRow
               key={row.id}
-              className="cursor-pointer border-slate-800 hover:bg-slate-800/40"
+              className="cursor-pointer border-border hover:bg-muted/60"
               onClick={() => router.push(`/projects/${row.original.id}`)}
             >
               {row.getVisibleCells().map((cell) => (

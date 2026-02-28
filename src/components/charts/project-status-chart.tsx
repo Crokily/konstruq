@@ -77,14 +77,14 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
           <Legend
             verticalAlign="bottom"
             iconType="circle"
-            formatter={(value) => <span className="text-sm text-slate-300">{value}</span>}
+            formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
           />
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-3xl font-semibold text-slate-100">{projects.length}</p>
-          <p className="text-xs uppercase tracking-wider text-slate-500">
+          <p className="text-3xl font-semibold text-foreground">{projects.length}</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">
             Total Projects
           </p>
         </div>

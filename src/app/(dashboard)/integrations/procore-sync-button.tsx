@@ -67,7 +67,7 @@ export function ProcoreSyncButton() {
         <Clock className="h-4 w-4" />
         {isSyncing ? "Syncing..." : "Sync Now"}
       </Button>
-      {message ? <p className="text-xs text-slate-400">{message}</p> : null}
+      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
     </div>
   );
 }
