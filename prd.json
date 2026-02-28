@@ -89,7 +89,7 @@
         "Verify in browser"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "This story should extract the table rendering from US-002 into a shared component. Then both ChartBlock (chat) and DashboardClient (dashboard) import it. The dashboard ChartSpec is from src/lib/dashboard/types.ts which has different shape (xKey/yKeys vs xAxisKey/metrics) \u2014 the shared component needs to handle both shapes or normalize to a common format."
     },
     {
