@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useChat } from "ai/react";
-import { Loader2, Send } from "lucide-react";
+import { AlertCircle, Loader2, Send, Trash2 } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/message-renderer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const suggestionPrompts = [
 ];
 
 export default function ChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, append } =
+  const { messages, input, handleInputChange, handleSubmit, isLoading, append, error, setMessages } =
     useChat({
       api: "/api/chat",
     });
@@ -38,6 +38,20 @@ export default function ChatPage() {
   return (
     <section className="h-[calc(100vh-4rem)]">
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
+          <p className="text-sm font-medium text-slate-300">Konstruq AI</p>
+          {messages.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setMessages([])}
+              className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition-colors hover:text-slate-300"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear
+            </button>
+          ) : null}
+        </div>
+
         <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
@@ -107,8 +121,25 @@ export default function ChatPage() {
                   </div>
                 </div>
               ) : null}
+
             </div>
           )}
+
+          {error ? (
+            <div className="mt-5 flex justify-start">
+              <div className="max-w-[90%] rounded-xl border border-rose-500/30 bg-rose-950/50 px-4 py-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+                  <div>
+                    <p className="text-sm text-rose-200">Something went wrong. Please try again.</p>
+                    {error.message ? (
+                      <p className="mt-1 text-xs text-rose-400/70">{error.message}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div ref={messagesEndRef} />
         </div>

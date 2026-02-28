@@ -6,12 +6,29 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChartFromSpec } from "@/components/chat/chart-from-spec";
 import type { ChartSpec, ChartSpecMetric } from "@/components/chat/chart-from-spec";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface MessageRendererProps {
   content: string;
 }
 
 type BlockType = "chart" | "table" | "kpi";
+
+interface TableSpec {
+  headers: string[];
+  rows: string[][];
+}
+
+interface KpiItem {
+  label: string;
+  value: string;
+  trend?: "up" | "down" | "neutral";
+  description?: string;
+}
+
+interface KpiSpec {
+  items: KpiItem[];
+}
 
 type MessageSegment =
   | { kind: "text"; content: string; key: string }
@@ -101,6 +118,85 @@ function parseChartSpec(raw: string): ChartSpec | null {
     metrics,
     data,
   };
+}
+
+function isNonEmptyStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((item) => typeof item === "string" && item.trim().length > 0)
+  );
+}
+
+function isStringMatrix(value: unknown): value is string[][] {
+  return (
+    Array.isArray(value) &&
+    value.every((row) => Array.isArray(row) && row.every((cell) => typeof cell === "string"))
+  );
+}
+
+function parseTableSpec(raw: string): TableSpec | null {
+  const parsed = parseJson(raw);
+
+  if (!isRecord(parsed) || !isNonEmptyStringArray(parsed.headers) || !isStringMatrix(parsed.rows)) {
+    return null;
+  }
+
+  return {
+    headers: parsed.headers,
+    rows: parsed.rows,
+  };
+}
+
+function isKpiTrend(value: unknown): value is "up" | "down" | "neutral" {
+  return value === "up" || value === "down" || value === "neutral";
+}
+
+function parseKpiSpec(raw: string): KpiSpec | null {
+  const parsed = parseJson(raw);
+
+  if (!isRecord(parsed) || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+    return null;
+  }
+
+  const items: KpiSpec["items"] = [];
+
+  for (const item of parsed.items) {
+    if (
+      !isRecord(item) ||
+      typeof item.label !== "string" ||
+      item.label.trim().length === 0 ||
+      typeof item.value !== "string" ||
+      item.value.trim().length === 0
+    ) {
+      return null;
+    }
+
+    items.push({
+      label: item.label,
+      value: item.value,
+      trend: isKpiTrend(item.trend) ? item.trend : undefined,
+      description: typeof item.description === "string" ? item.description : undefined,
+    });
+  }
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return { items };
+}
+
+function getKpiTrendInfo(trend: KpiItem["trend"]) {
+  if (trend === "up") {
+    return { symbol: "▲", className: "text-emerald-400" };
+  }
+
+  if (trend === "down") {
+    return { symbol: "▼", className: "text-rose-400" };
+  }
+
+  return { symbol: "—", className: "text-slate-500" };
 }
 
 function FallbackCodeBlock({ content }: { content: string }) {
@@ -197,6 +293,83 @@ export function MessageRenderer({ content }: MessageRendererProps) {
               className="overflow-hidden rounded-xl border border-slate-700/90 bg-slate-900/50 p-3"
             >
               <ChartFromSpec spec={parsedSpec} />
+            </div>
+          );
+        }
+
+        if (segment.blockType === "table") {
+          const parsedSpec = parseTableSpec(segment.content);
+
+          if (!parsedSpec) {
+            return <FallbackCodeBlock key={segment.key} content={segment.content} />;
+          }
+
+          return (
+            <div key={segment.key} className="overflow-x-auto rounded-lg border border-slate-700">
+              <Table className="min-w-full">
+                <TableHeader className="bg-slate-800/50 [&_tr]:border-b-slate-700">
+                  <TableRow className="border-slate-700 hover:bg-transparent">
+                    {parsedSpec.headers.map((header, headerIndex) => (
+                      <TableHead
+                        key={`${segment.key}-header-${headerIndex}`}
+                        className="px-3 py-2 text-xs uppercase tracking-wide text-slate-300"
+                      >
+                        {header}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {parsedSpec.rows.map((row, rowIndex) => (
+                    <TableRow key={`${segment.key}-row-${rowIndex}`} className="border-slate-700 hover:bg-slate-800/30">
+                      {row.map((cell, cellIndex) => (
+                        <TableCell
+                          key={`${segment.key}-cell-${rowIndex}-${cellIndex}`}
+                          className="px-3 py-2 text-sm text-slate-200"
+                        >
+                          {cell}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          );
+        }
+
+        if (segment.blockType === "kpi") {
+          const parsedSpec = parseKpiSpec(segment.content);
+
+          if (!parsedSpec) {
+            return <FallbackCodeBlock key={segment.key} content={segment.content} />;
+          }
+
+          return (
+            <div key={segment.key} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {parsedSpec.items.map((item, itemIndex) => {
+                const trendInfo = getKpiTrendInfo(item.trend);
+
+                return (
+                  <div
+                    key={`${segment.key}-kpi-${itemIndex}`}
+                    className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">{item.label}</p>
+                        <p className="text-lg font-semibold text-slate-100">{item.value}</p>
+                      </div>
+                      <span className={`pt-0.5 text-sm ${trendInfo.className}`} aria-hidden>
+                        {trendInfo.symbol}
+                      </span>
+                    </div>
+                    {item.description ? (
+                      <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           );
         }
