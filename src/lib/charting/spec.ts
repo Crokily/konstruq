@@ -63,7 +63,7 @@ export const CHART_STYLE_SPEC = {
   gridStroke: "var(--border)",
   gridOpacity: 0.55,
   gridDash: "4 4",
-  chartMargin: { top: 8, right: 14, left: 8, bottom: 10 },
+  chartMargin: { top: 8, right: 14, left: 8, bottom: 20 },
 } as const;
 
 const SUPPORTED_CHART_TYPES: Set<SupportedChartType> = new Set([
@@ -395,8 +395,8 @@ function buildRenderHints(spec: ChartSpec): ChartRenderHints {
   const shouldRotate = labelStats.count > 10 || labelStats.longest > 14;
 
   return {
-    xAxisAngle: shouldRotate ? -30 : 0,
-    xAxisHeight: shouldRotate ? 56 : 32,
+    xAxisAngle: 0,
+    xAxisHeight: shouldRotate ? 110 : 56,
     showLegend: spec.metrics.length > 1 || spec.type === "pie" || spec.type === "scatter",
     height: spec.type === "pie" ? 320 : 300,
   };

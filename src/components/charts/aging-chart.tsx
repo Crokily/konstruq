@@ -94,8 +94,8 @@ export function AgingChart({ data }: AgingChartProps) {
           />
           <Tooltip cursor={{ fill: "color-mix(in oklab, var(--muted) 80%, transparent)" }} content={<AgingTooltip />} />
           <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 12 }} />
-          <Bar dataKey="ar" name="AR" fill="#10b981" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="ap" name="AP" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="ar" name="AR" fill="#10b981" radius={[4, 4, 0, 0]} activeBar={false} stroke="none" />
+          <Bar dataKey="ap" name="AP" fill="#f43f5e" radius={[4, 4, 0, 0]} activeBar={false} stroke="none" />
         </BarChart>
       </ResponsiveContainer>
     </div>

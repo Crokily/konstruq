@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChartFromSpec } from "@/components/chat/chart-from-spec";
+import { ChartBlock } from "@/components/chat/chart-block";
 import type { NormalizeChartSpecResult } from "@/lib/charting/spec";
 import { normalizeChartSpec } from "@/lib/charting/spec";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -265,14 +265,7 @@ export function MessageRenderer({ content }: MessageRendererProps) {
             return <InvalidChartBlock key={segment.key} />;
           }
 
-          return (
-            <div
-              key={segment.key}
-              className="overflow-hidden rounded-xl border border-border bg-muted/30 p-3"
-            >
-              <ChartFromSpec spec={parsedSpecResult.spec} hints={parsedSpecResult.hints} warnings={parsedSpecResult.warnings} />
-            </div>
-          );
+          return <ChartBlock key={segment.key} result={parsedSpecResult} />;
         }
 
         if (segment.blockType === "table") {

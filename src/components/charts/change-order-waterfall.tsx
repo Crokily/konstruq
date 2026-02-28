@@ -232,8 +232,8 @@ export function ChangeOrderWaterfall({
             />
             <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.55} />
             <Tooltip content={<WaterfallTooltip />} />
-            <Bar dataKey="base" stackId="waterfall" fill="transparent" />
-            <Bar dataKey="delta" stackId="waterfall" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="base" stackId="waterfall" fill="transparent" activeBar={false} stroke="none" />
+            <Bar dataKey="delta" stackId="waterfall" radius={[4, 4, 0, 0]} activeBar={false} stroke="none">
               <LabelList dataKey="labelValue" position="top" className="fill-muted-foreground text-[11px]" />
               {chartData.map((entry) => (
                 <Cell key={entry.key} fill={entry.color} />

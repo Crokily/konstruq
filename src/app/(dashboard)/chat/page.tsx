@@ -1,6 +1,7 @@
 "use client";
 
 import { MessageSquarePlus, Trash2 } from "lucide-react";
+import type { Message } from "ai";
 import { Button } from "@/components/ui/button";
 import { useChatRuntime } from "@/components/chat/chat-runtime-provider";
 import { ChatComposer } from "@/components/chat/page/chat-composer";
@@ -34,10 +35,28 @@ export default function ChatPage() {
     switchConversation,
   } = useConversationManager({ messages, isLoading, setMessages });
 
-  const visibleMessages =
-    isLoading && messages.at(-1)?.role === "assistant"
-      ? messages.filter((message) => message.id !== messages.at(-1)?.id)
-      : messages;
+  function sanitizeStreamingAssistantContent(content: string): string {
+    const completeBlocksRemoved = content.replace(/```(chart|table|kpi)\n[\s\S]*?```/g, "");
+    const trailingBlockStart = completeBlocksRemoved.search(/```(chart|table|kpi)\n[\s\S]*$/);
+    const safeText =
+      trailingBlockStart >= 0
+        ? completeBlocksRemoved.slice(0, trailingBlockStart)
+        : completeBlocksRemoved;
+
+    return safeText.trim();
+  }
+
+  const visibleMessages: Message[] = messages.map((message, index) => {
+    const isStreamingAssistant =
+      isLoading && index === messages.length - 1 && message.role === "assistant";
+
+    if (!isStreamingAssistant || typeof message.content !== "string") {
+      return message;
+    }
+
+    const sanitized = sanitizeStreamingAssistantContent(message.content);
+    return { ...message, content: sanitized.length > 0 ? sanitized : "Generating..." };
+  });
 
   const lastAssistantMessage = [...messages]
     .reverse()
