@@ -135,3 +135,21 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - sheets column stores full parsed row data as JSON array — enables direct injection into LLM context
   - category field is 'pm' or 'erp' for organizing uploads
 ---
+
+## 2026-02-28T01:40:00Z - US-103: File upload API — parse CSV and XLSX to JSON
+- Installed papaparse (^5.5.3), xlsx (^0.18.5), @types/papaparse (^5.5.2 dev)
+- Created src/app/api/upload/route.ts with:
+  - Clerk auth + auto-create app user if missing (hackathon convenience)
+  - Multipart form-data parsing (file + category fields)
+  - CSV parsing via Papa.parse with header:true
+  - XLSX parsing via XLSX.read with per-sheet extraction
+  - Validation: file exists, category is pm/erp, extension is csv/xlsx/xls
+  - Saves parsed sheets (with full rows) to uploaded_datasets table
+  - Returns summary without row data
+- Files changed: package.json, package-lock.json, src/app/api/upload/route.ts
+- **Learnings for future iterations:**
+  - Auto-create user pattern avoids 404 during demo when Clerk user hasn't synced to DB
+  - parseSheetsFromFile helper keeps route handler clean
+  - XLSX.utils.sheet_to_json with header:1 gets column names from first row
+  - Papa.parse result.meta.fields contains headers when header:true
+---
