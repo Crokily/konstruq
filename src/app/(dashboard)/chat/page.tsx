@@ -7,6 +7,14 @@ import { MessageRenderer } from "@/components/chat/message-renderer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  listDatasets: "Scanning datasets...",
+  getDatasetSchema: "Reading schema...",
+  queryDatasetRows: "Querying data...",
+  searchDatasets: "Searching...",
+  aggregateColumn: "Calculating...",
+};
+
 const suggestionPrompts = [
   "What data do I have?",
   "Show project budget overview",
@@ -20,6 +28,22 @@ export default function ChatPage() {
       api: "/api/chat",
     });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastAssistantMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "assistant") as
+    | ({
+        toolInvocations?: Array<{
+          toolName: string;
+          state: "call" | "partial-call" | "result";
+        }>;
+      } & (typeof messages)[number])
+    | undefined;
+  const activeTool = lastAssistantMessage?.toolInvocations?.find(
+    (tool) => tool.state === "call" || tool.state === "partial-call",
+  );
+  const loadingLabel = activeTool
+    ? TOOL_STATUS_LABELS[activeTool.toolName] ?? "Working..."
+    : "Thinking...";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,7 +140,7 @@ export default function ChatPage() {
                     <p className="text-xs font-medium text-muted-foreground">Konstruq AI</p>
                     <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm text-foreground">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-                      <span className="text-xs text-muted-foreground">Thinking...</span>
+                      <span className="text-xs text-muted-foreground">{loadingLabel}</span>
                     </div>
                   </div>
                 </div>
