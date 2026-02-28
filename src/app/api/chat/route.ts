@@ -34,7 +34,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as { messages?: CoreMessage[] };
+    const body = (await request.json()) as {
+      messages?: CoreMessage[];
+      projectId?: string;
+    };
+    const projectId =
+      typeof body.projectId === "string" && body.projectId.length > 0
+        ? body.projectId
+        : undefined;
     const incomingMessages = Array.isArray(body.messages)
       ? (body.messages as CoreMessage[])
       : [];
@@ -43,7 +50,7 @@ export async function POST(request: NextRequest) {
       model: mistral("mistral-large-latest"),
       system: CHAT_SYSTEM_PROMPT,
       messages: trimMessages(incomingMessages),
-      tools: createDataTools(appUserId),
+      tools: createDataTools(appUserId, projectId),
       maxSteps: 8,
       onFinish({ usage }) {
         if (!usage) {

@@ -1,271 +1,110 @@
-# Ralph Progress Log
-Started: 2026-02-27T11:45:00Z
-PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
+# Ralph Progress Log — Konstruq V2
+Started: 2026-02-28
 
 ## Codebase Patterns
-- Project uses Next.js 16 App Router with src/ directory
-- UI components in src/components/ui/ (shadcn/ui)
-- Custom components in src/components/layout/ and src/components/charts/
-- Database: Neon + Drizzle ORM, schema at src/lib/db/schema.ts
-- Auth: Clerk, middleware at src/middleware.ts
-- Types: src/lib/types/procore.ts and src/lib/types/sage.ts
-- Mock data: src/lib/data/mock/, providers: src/lib/data/providers/
-- Route groups: (auth) for sign-in/up, (dashboard) for protected pages
-- Dark theme: bg-slate-950, cards bg-slate-900/50, accent amber-500
-- Env vars in .env.local (Clerk, Neon, Procore sandbox keys present)
-- Recharts for all charts (Tremor incompatible with React 19)
-- Quality scripts: "typecheck": "tsc --noEmit", "lint": "eslint"
+- Database: Neon Postgres via drizzle-orm/neon-http. Schema at src/lib/db/schema.ts. Push via `npx drizzle-kit push`.
+- Auth: Clerk. All API routes use `const { userId } = await auth()` then `resolveAppUserId(userId)` from src/lib/db/app-user.ts.
+- API routes: Next.js 16 App Router. Route handlers export async functions (GET/POST/DELETE). Return NextResponse.json().
+- UI: shadcn/ui components in src/components/ui/. Dark theme. Amber/cyan accent colors.
+- AI: Mistral via @ai-sdk/mistral. `generateText` for dashboard generation, `streamText` for chat.
+- Dashboard: AI-generated via POST /api/dashboard/generate. DashboardClient renders KPI cards + DynamicChart.
+- Chat: useChat from ai/react wrapped in ChatRuntimeProvider at layout level. Tools in _lib/data-tools.ts.
+- Data: uploadedDatasets stores parsed CSV/XLSX rows as JSONB in sheets column.
+- Env vars: .env.local (DATABASE_URL, MISTRAL_API_KEY, CLERK_SECRET_KEY etc.)
+- Styling: Tailwind v4 with tw-animate-css. Global styles in globals.css.
+
 ---
 
-## 2026-02-27T13:13:00Z - US-001: Fix build configuration and add typecheck/lint scripts
-- Added "typecheck": "tsc --noEmit" script to package.json
-- Verified: npm run typecheck (0 errors), npm run lint (clean), npm run build (success)
-- Files changed: package.json
-- **Learnings for future iterations:**
-  - Codebase was already clean — tsc --noEmit and eslint both pass with zero issues
-  - Next.js 16 shows deprecation warning about "middleware" → "proxy" convention (non-blocking)
-  - Codex model is `gpt-5.3-codex` (not `gpt-5.3-codex-xhigh` — that variant not available on ChatGPT accounts)
----
-
-## 2026-02-27T13:16:00Z - US-002: Database migration to Neon
-- Added db:generate, db:push, db:studio scripts to package.json
-- Updated drizzle.config.ts to auto-load .env.local via dotenv.config()
-- Confirmed schema push to Neon: tables users, data_connections, synced_projects exist
-- `npm run db:push` now works standalone (no manual env sourcing needed)
-- Files changed: package.json, drizzle.config.ts
-- **Learnings for future iterations:**
-  - drizzle-kit 0.31 does NOT have built-in envFile support in config
-  - Must explicitly load .env.local via `dotenv.config({ path: ".env.local" })` in drizzle.config.ts
-  - `npm run` does NOT auto-load .env.local (that's a Next.js feature, not Node/npm)
-  - dotenv is available as transitive dep via shadcn -> @dotenvx/dotenvx
----
-
-## 2026-02-27T14:15 - US-003: Clerk auth flow verification
-- Renamed src/middleware.ts → src/proxy.ts (Next.js 16 deprecation fix)
-- Clerk auth setup verified: ClerkProvider in layout, sign-in/sign-up pages, protected routes
-- Files changed: src/middleware.ts (deleted), src/proxy.ts (created)
-- **Learnings:**
-  - Next.js 16 requires "proxy.ts" not "middleware.ts" 
-  - pi --print has session conflicts — use codex exec directly instead
----
-
-## 2026-02-27T14:25 - US-006: Mock Sage Intacct financial data and DataProvider
-- Created DataProvider interface with 12 methods for all chart data
-- 6 mock construction projects with realistic $10M-$67M valuations
-- Per-project financials: cost breakdown by category, 12-month EVM curves
-- 3-5 change orders per project, 8-12 schedule tasks per project
-- AR/AP aging data with 5 buckets
-- MockDataProvider with computed KPIs (CPI, SPI, health matrix)
-- Files: src/lib/data/{index.ts, providers/interface.ts, providers/mock.ts, mock/*.ts}
-- **Learnings:**
-  - Codex CLI (gpt-5.3-codex) handles large file generation well
-  - Always verify typecheck after codex generates multiple interdependent files
----
-
-## 2026-02-27T14:35 - US-007: Dashboard overview — KPI cards and summary charts
-- Created 3 chart components: KPICards, ProjectStatusChart, RevenueExpenseChart
-- Dashboard page is server component, charts are client components
-- Data flows: MockDataProvider → server fetch → pass as props to client charts
-- Recharts v3 pattern: "use client" + named imports from "recharts"
-- Currency formatting via Intl.NumberFormat compact notation
-- **Learnings:**
-  - Recharts v3 works well with React 19 
-  - Keep chart components as "use client", page as server component
----
-
-## 2026-02-27T14:45 - US-008: Project health scatter plot and project list table
-- Scatter plot with diagonal reference line, color-coded health dots
-- TanStack Table with 6 sortable columns + row click navigation
-- Dashboard and Projects pages updated with real data
-- **Learnings:** Recharts ScatterChart needs explicit XAxis/YAxis/ZAxis for proper rendering
----
-
-## 2026-02-27T14:55 - US-009: Project detail — cost breakdown and EVM chart
-- 3 new chart components: CostBreakdownChart, EVMChart, EVMKPIBadges
-- Project detail page with header, progress, source badges, dual charts
-- Mock data IDs normalized to "1"-"6" strings across all files
-- **Learnings:** Next.js 16 params is Promise - must await. Recharts grouped bars need explicit Bar per series.
----
-
-## 2026-02-27T15:05 - US-010: Financials page — cash flow, aging, change order waterfall
-- 3 chart components + shadcn Select component added
-- Waterfall uses transparent base bar stacking technique
-- Financials page with server-side data fetch, 3 chart cards
-- **Learnings:** Waterfall chart = stacked bars with invisible base. shadcn Select needed for dropdown.
----
-
-## 2026-02-27T15:15 - US-011: Integrations page, loading states, visual polish
-- Integrations page with Procore/Sage cards, feature lists, status badges
-- Settings placeholder page
-- Loading skeletons for 3 dashboard pages using shadcn Skeleton
-- Sidebar nav confirmed with all routes
----
-
-## 2026-02-27T15:25 - US-004+US-005: Procore OAuth and data sync
-- 3 API routes: /api/procore/{auth, callback, sync}
-- OAuth flow: auth redirect → callback token exchange → DB storage
-- Project sync: fetch from Procore REST v1.1 → upsert to synced_projects
-- Integrations page updated with dynamic connection status
-- ProCoreSyncButton client component for async sync
-- **Learnings:** Drizzle upsert needs manual find+update-or-insert pattern for Neon
----
-
-## 2026-02-28T01:30:00Z - US-101: Install AI SDK dependencies and create chat API route skeleton
-- Installed `ai` (^4.3.19) and `@ai-sdk/mistral` (^1.2.8) packages
-- Created `src/app/api/chat/route.ts` with:
-  - POST handler reading `{ messages }` from request body
-  - `streamText()` with `mistral('mistral-large-latest')` model
-  - Construction data analysis system prompt
-  - Returns `result.toDataStreamResponse()` for streaming
-- No auth checks yet (deferred to US-106)
-- Files changed: package.json, package-lock.json, src/app/api/chat/route.ts
-- **Learnings for future iterations:**
-  - `@ai-sdk/mistral` auto-reads MISTRAL_API_KEY from env — no explicit config needed
-  - AI SDK v4 uses `streamText()` + `toDataStreamResponse()` pattern
-  - Keep chat route simple — auth and data injection come in later stories
----
-
-## 2026-02-28T01:35:00Z - US-102: Database schema for uploaded datasets and chat sessions
-- Added `uploaded_datasets` table to src/lib/db/schema.ts
-- Columns: id(uuid PK), userId(uuid FK→users), category(varchar), fileName(varchar), sheets(jsonb), meta(jsonb), isActive(boolean), uploadedAt(timestamp)
-- Schema pushed to Neon via `npm run db:push` — table created successfully
+## 2026-02-28 15:20 UTC - US-001: Add projects table and modify uploadedDatasets schema
+- Added `projects` table to schema.ts (id, userId, name, description, status, createdAt, updatedAt)
+- Added nullable `projectId` FK column to `uploadedDatasets`
+- Schema pushed to Neon via drizzle-kit push
+- Cleared all existing uploaded_datasets rows
 - Files changed: src/lib/db/schema.ts
 - **Learnings for future iterations:**
-  - userId references users.id (uuid FK) — upload/chat routes will need to resolve Clerk userId to app user uuid
-  - sheets column stores full parsed row data as JSON array — enables direct injection into LLM context
-  - category field is 'pm' or 'erp' for organizing uploads
+  - Codex CLI uses config.toml for model/effort; do NOT append effort to model name in --model flag
+  - drizzle-kit push works directly (no migrations folder needed)
+  - projects table placed between syncedProjects and uploadedDatasets sections
 ---
 
-## 2026-02-28T01:40:00Z - US-103: File upload API — parse CSV and XLSX to JSON
-- Installed papaparse (^5.5.3), xlsx (^0.18.5), @types/papaparse (^5.5.2 dev)
-- Created src/app/api/upload/route.ts with:
-  - Clerk auth + auto-create app user if missing (hackathon convenience)
-  - Multipart form-data parsing (file + category fields)
-  - CSV parsing via Papa.parse with header:true
-  - XLSX parsing via XLSX.read with per-sheet extraction
-  - Validation: file exists, category is pm/erp, extension is csv/xlsx/xls
-  - Saves parsed sheets (with full rows) to uploaded_datasets table
-  - Returns summary without row data
-- Files changed: package.json, package-lock.json, src/app/api/upload/route.ts
-- **Learnings for future iterations:**
-  - Auto-create user pattern avoids 404 during demo when Clerk user hasn't synced to DB
-  - parseSheetsFromFile helper keeps route handler clean
-  - XLSX.utils.sheet_to_json with header:1 gets column names from first row
-  - Papa.parse result.meta.fields contains headers when header:true
+## 2026-02-28 15:35 UTC - US-002: Projects CRUD API endpoints
+- Created /api/projects (GET + POST) and /api/projects/[id] (DELETE)
+- GET returns projects with datasetCount; POST validates name; DELETE soft-archives
+- Files: src/app/api/projects/route.ts, src/app/api/projects/[id]/route.ts
 ---
 
-## 2026-02-28T01:58:00Z - US-104: Data Sources page — upload UI and dataset list
-- Server component page at src/app/(dashboard)/data-sources/page.tsx loads datasets from DB via Clerk auth
-- Client component data-sources-client.tsx handles upload UI, file picker, delete, status feedback
-- Two sections: PM Data (Project Management) and ERP Data (Financial), each with upload area and dataset list
-- Upload calls POST /api/upload with category, shows loading spinner, success/error messages
-- Dataset list shows fileName, sheet count, row count, upload date with date formatting
-- Delete button per dataset calls DELETE /api/upload/[id]/route.ts
-- DELETE route at src/app/api/upload/[id]/route.ts with Clerk auth + ownership check
-- Data Sources link added to sidebar with Database icon (amber active state)
-- Dark theme consistent: slate-950 bg, slate-900/50 cards, amber-500 buttons, dashed upload border
-- Files changed: src/app/(dashboard)/data-sources/page.tsx, src/app/(dashboard)/data-sources/data-sources-client.tsx, src/app/api/upload/[id]/route.ts, src/components/layout/sidebar.tsx
-- **Learnings for future iterations:**
-  - Code was pre-existing from a previous incomplete iteration — quality checks (tsc + eslint) confirmed clean
-  - Clerk sign-in for browser testing: use Backend API to create user + session, then create sign_in_token. Clerk 2FA email verification blocks headless login with password. Created fresh test user (test-konstruq@example.com) via API
-  - Auto-create user pattern (from US-103) is used in both server component and delete route — consistent pattern
-  - Server component fetches data, client component manages state — good separation for upload interactivity
+## 2026-02-28 15:40 UTC - US-003: Projects list page with create dialog
+- Replaced MockDataProvider-based projects page with real CRUD client component
+- Project cards with create dialog, delete, empty state
+- Files: projects/page.tsx (rewritten), projects/projects-client.tsx (new), loading.tsx (deleted)
 ---
 
-## 2026-02-28T02:08:00Z - US-105: Chat page — full chat UI with useChat
-- Created src/app/(dashboard)/chat/page.tsx as "use client" component
-- Uses useChat hook from ai/react pointing to /api/chat
-- Full-height layout: h-[calc(100vh-4rem)] with rounded card container
-- Scrollable messages area + fixed bottom input bar
-- Auto-scroll to bottom on new messages via useEffect + messagesEndRef
-- User messages: right-aligned, amber-500 bg, dark text, "You" label
-- Assistant messages: left-aligned, slate-800 bg, light text, "Konstruq AI" label
-- Max-width 80% on message bubbles
-- Streaming indicator: pulsing amber dot + "Thinking..." text when isLoading
-- Empty state: centered welcome with title, subtitle, 4 suggestion prompt buttons in 2x2 grid
-- Suggestions use append() to submit programmatically
-- Input bar: text input + Send button, disabled when empty/loading
-- Added "AI Chat" nav item to sidebar with MessageSquare icon, before Data Sources
-- Files changed: src/app/(dashboard)/chat/page.tsx (new), src/components/layout/sidebar.tsx
-- **Learnings for future iterations:**
-  - Clerk test instance requires email 2FA for all sign-ins (even new API-created users). Workaround: temporarily add route to proxy.ts public routes for browser testing, then revert
-  - useChat's append() is the right way to submit suggestion prompts programmatically
-  - Codex model must be gpt-5.3-codex (anthropic models not supported on ChatGPT-connected Codex)
-  - Full-height chat in padded layout: use h-[calc(100vh-4rem)] to account for p-8 padding
+## 2026-02-28 15:45 UTC - US-004: Upload API accepts projectId
+- Upload route now requires projectId in FormData, validates project ownership
+- Files: src/app/api/upload/route.ts
 ---
 
-## 2026-02-28T02:15:00Z - US-106: Wire uploaded data into chat context
-- Modified src/app/api/chat/route.ts (271 insertions, 20 deletions — 85% rewrite)
-- Added Clerk auth + auto-create user pattern (consistent with upload/data-sources routes)
-- Loads all active uploaded_datasets for authenticated user via `and(eq(userId), eq(isActive, true))`
-- JSONB sheets column normalized with strict type guards: `normalizeSheets()` + `normalizeRows()`
-- Dynamic system prompt built with:
-  - Base Konstruq AI identity + data analysis instructions
-  - Output format rules for ```chart, ```table, ```kpi code blocks
-  - Per-dataset context: fileName, category, schema, rows (full or truncated)
-- Token budgeting: estimates tokens as `JSON.stringify(rows).length / 4`, 80K budget
-  - If total exceeds budget, truncates largest datasets first (20 rows preview)
-- System prompt instructs AI: never invent numbers, use actual data, note missing data
-- Streaming preserved: `streamText()` + `toDataStreamResponse()`
-- Files changed: src/app/api/chat/route.ts
-- **Learnings for future iterations:**
-  - JSONB columns from Drizzle come as `unknown` — need explicit runtime validation/casting
-  - Token budget strategy: sort datasets by size descending, truncate largest first until under budget
-  - `and()` from drizzle-orm combines multiple `eq()` conditions for compound WHERE clauses
-  - `CoreMessage` type from `ai` package provides proper typing for messages array
+## 2026-02-28 15:50 UTC - US-005: Data Sources page with project selector
+- Added Select dropdown for project selection before upload
+- Datasets show project name badge; server passes projects as props
+- Files: data-sources/page.tsx, data-sources-client.tsx
 ---
 
-## 2026-02-28T02:25:00Z - US-107: Chart rendering in chat messages
-- Installed react-markdown + remark-gfm for markdown rendering in chat
-- Created src/components/chat/chart-from-spec.tsx:
-  - "use client" component mapping ChartSpec JSON to Recharts components
-  - Supports 7 chart types: bar, line, area, pie, scatter, stacked-bar, composed
-  - Default color palette: amber, blue, green, red, purple, cyan
-  - Dark theme: slate-900/95 tooltip bg, #334155 grid, fill-slate-400 axis ticks
-  - ResponsiveContainer width="100%" height={300}
-  - Edge cases: empty data, missing metrics, unknown type → fallback to bar
-  - Custom dark tooltip matching existing chart patterns
-- Created src/components/chat/message-renderer.tsx:
-  - "use client" component parsing AI content with regex: /```(chart|table|kpi)\n([\s\S]*?)```/g
-  - Splits into segments: text (ReactMarkdown + remarkGfm) and special blocks
-  - Chart blocks → JSON parsed → ChartFromSpec component
-  - Table/KPI blocks → styled <pre> fallback (US-108 will add proper rendering)
-  - Malformed JSON → raw code display fallback
-  - Dark markdown styles via react-markdown components prop (no @tailwindcss/typography needed)
-- Updated src/app/(dashboard)/chat/page.tsx:
-  - Assistant messages now render via <MessageRenderer content={message.content} />
-  - User messages remain plain text in amber bubbles
-  - Assistant bubbles widened to max-w-[90%] with overflow-hidden for chart content
-- Browser verified: chat page loads correctly with sidebar, suggestion prompts, input bar
-- Files changed: package.json, package-lock.json, src/components/chat/chart-from-spec.tsx (new), src/components/chat/message-renderer.tsx (new), src/app/(dashboard)/chat/page.tsx
-- **Learnings for future iterations:**
-  - react-markdown v9 works fine with Next.js 16 bundler (ESM module)
-  - Recharts chart type selection via ternary chain in JSX works but is verbose — could be refactored to component map
-  - Scatter chart needs special handling: x/y data must be extracted from metric keys, not direct data pass
-  - PieChart uses different pattern: single Pie with Cell colors, not multiple data series
-  - For browser testing without auth: making routes public in proxy.ts helps page load, but API routes with auth() still return 401
+## 2026-02-28 15:55 UTC - US-006: Chat data tools filter by projectId
+- All 5 chat tools now filter by optional projectId
+- Helper buildDatasetFilter centralizes the logic
+- Files: data-tools.ts, route.ts, system-prompt.ts
 ---
 
-## 2026-02-28T02:46:00Z - US-108: Chat polish — tables, KPI badges, error handling
-- Updated src/components/chat/message-renderer.tsx:
-  - Added TableSpec/KpiSpec/KpiItem interfaces with strict validation
-  - parseTableSpec: validates headers (non-empty string[]), rows (string[][])
-  - parseKpiSpec: validates items array, each needs label+value strings, optional trend (up/down/neutral)
-  - Table blocks render using shadcn Table/TableHeader/TableBody/TableRow/TableCell with dark styling (border-slate-700, bg-slate-800/50 header, text-slate-200 cells)
-  - KPI blocks render as responsive grid (2/3/4 cols) with trend indicators (▲ emerald, ▼ rose, — slate)
-  - Malformed JSON in any block type falls back to FallbackCodeBlock (pre-existing behavior preserved)
-  - Unknown block types still use JSON.stringify pretty-print fallback
-- Updated src/app/(dashboard)/chat/page.tsx:
-  - Destructured `error` and `setMessages` from useChat()
-  - Header bar: "Konstruq AI" title left, "Clear" button right (visible only when messages > 0)
-  - Clear button uses Trash2 icon, calls setMessages([]) to reset conversation
-  - Error UI: rose-tinted bubble with AlertCircle icon, "Something went wrong" message, optional error.message detail
-  - Error displayed before messagesEndRef for proper scroll positioning
-- Files changed: src/components/chat/message-renderer.tsx, src/app/(dashboard)/chat/page.tsx
-- **Learnings for future iterations:**
-  - Codex may create extra component files (kpi-from-spec.tsx, table-from-spec.tsx) that aren't actually imported — always check for unused files before committing
-  - Inline rendering in message-renderer.tsx is simpler than separate components for table/kpi — keeps all parsing logic colocated
-  - isNonEmptyStringArray and isStringMatrix are good type guard patterns for validating JSON-parsed data
-  - Dev server (next dev) starts on random port 3737 by default — use `-p 3000 -H 0.0.0.0` flags
-  - Production server (`next start -p 3100`) may be running via external supervisor — kill before starting dev
+## 2026-02-28 16:00 UTC - US-007: Chat UI project selector
+- Zustand store for chat project context (avoids prop drilling through layout)
+- Project selector in chat header, conversations inherit projectId
+- Files: project-context.ts (new), chat-runtime-provider.tsx, chat/page.tsx, history.ts, use-conversation-manager.ts, conversation-sidebar.tsx
+---
+
+## 2026-02-28 16:05 UTC - US-008: Dashboard generate API accepts projectId
+- Dashboard generation route accepts optional projectId in JSON body
+- DashboardClient sends projectId when available
+- Files: generate/route.ts, dashboard-client.tsx
+---
+
+## 2026-02-28 16:15 UTC - US-009: Integrate construction analytics prompt
+- Enhanced identity to "Advanced Construction Predictive & Forecasting Analytics Agent"
+- Added 4 new sections: Data Understanding, Forecasting Methodology, Forecast Metrics, Bias Minimisation
+- All existing tool workflow/output format/integrity rules preserved unchanged
+- Files: system-prompt.ts
+---
+
+## 2026-02-28 16:25 UTC - US-010: Extract shared dashboard generation utilities
+- Created src/lib/dashboard/generate.ts with shared functions
+- DASHBOARD_PROMPTS map for 3 variants (executive, project-controls, financials)
+- Route.ts refactored to thin wrapper calling shared utils
+- Files: generate.ts (new), route.ts (refactored)
+---
+
+## 2026-02-28 16:30 UTC - US-011: Main dashboard chart priorities + grouping
+- Executive prompt enhanced with data-aware chart priority rules
+- ChartSpec.group optional field added
+- DashboardClient renders grouped sections when charts have groups
+- Files: generate.ts, types.ts, dashboard-client.tsx
+---
+
+## 2026-02-28 16:35 UTC - US-012: AI-generated project controls dashboard
+- /projects/[id] now shows AI-generated dashboard from project's datasets
+- project-controls prompt focuses on schedule, tasks, delays, equipment
+- DashboardClient accepts variant prop
+- Files: projects/[id]/page.tsx (rewritten), generate.ts, dashboard-client.tsx
+---
+
+## 2026-02-28 16:40 UTC - US-013: AI-generated financial dashboard
+- /financials now shows AI-generated portfolio financial dashboard
+- Financials prompt focuses on budget, EVM, cash flow, cost detail
+- Files: financials/page.tsx (rewritten), loading.tsx (deleted), generate.ts
+---
+
+## 2026-02-28 16:50 UTC - US-014: Remove MockDataProvider and dead code
+- Deleted 21 files: all mock data, providers, interface, static charts, DashboardWorkspace
+- Removed 3,863 lines of dead code
+- Full build verified passing
+- **Learnings:** Always grep before deleting; delete parent dead components first, then re-check children
 ---

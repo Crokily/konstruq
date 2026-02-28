@@ -1,14 +1,15 @@
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { uploadedDatasets, users } from "@/lib/db/schema";
+import { projects, uploadedDatasets, users } from "@/lib/db/schema";
 
 import {
   DataSourcesClient,
   type DatasetCategory,
   type DatasetItem,
   type DatasetSheet,
+  type ProjectOption,
 } from "./data-sources-client";
 
 const DEFAULT_DATASET_CATEGORY: DatasetCategory = "uploaded";
@@ -77,6 +78,7 @@ export default async function DataSourcesPage() {
   const { userId } = await auth();
 
   let initialDatasets: DatasetItem[] = [];
+  let projectOptions: ProjectOption[] = [];
 
   if (userId) {
     let [appUser] = await db
@@ -93,16 +95,47 @@ export default async function DataSourcesPage() {
     }
 
     if (appUser) {
-      const datasets = await db
-        .select({
-          id: uploadedDatasets.id,
-          category: uploadedDatasets.category,
-          fileName: uploadedDatasets.fileName,
-          sheets: uploadedDatasets.sheets,
-          uploadedAt: uploadedDatasets.uploadedAt,
-        })
-        .from(uploadedDatasets)
-        .where(eq(uploadedDatasets.userId, appUser.id));
+      const [allProjects, activeProjects, datasets] = await Promise.all([
+        db
+          .select({
+            id: projects.id,
+            name: projects.name,
+          })
+          .from(projects)
+          .where(eq(projects.userId, appUser.id)),
+        db
+          .select({
+            id: projects.id,
+            name: projects.name,
+          })
+          .from(projects)
+          .where(
+            and(
+              eq(projects.userId, appUser.id),
+              ne(projects.status, "archived"),
+            ),
+          ),
+        db
+          .select({
+            id: uploadedDatasets.id,
+            category: uploadedDatasets.category,
+            fileName: uploadedDatasets.fileName,
+            sheets: uploadedDatasets.sheets,
+            uploadedAt: uploadedDatasets.uploadedAt,
+            projectId: uploadedDatasets.projectId,
+          })
+          .from(uploadedDatasets)
+          .where(eq(uploadedDatasets.userId, appUser.id)),
+      ]);
+
+      const projectNameById = new Map(
+        allProjects.map((project) => [project.id, project.name]),
+      );
+
+      projectOptions = activeProjects.map((project) => ({
+        id: project.id,
+        name: project.name,
+      }));
 
       initialDatasets = sortDatasets(
         datasets.map(
@@ -113,6 +146,10 @@ export default async function DataSourcesPage() {
               fileName: dataset.fileName,
               sheets: normalizeSheets(dataset.sheets),
               uploadedAt: toIsoDate(dataset.uploadedAt),
+              projectId: dataset.projectId ?? undefined,
+              projectName: dataset.projectId
+                ? projectNameById.get(dataset.projectId)
+                : undefined,
             }) satisfies DatasetItem,
         ),
       );
@@ -127,7 +164,10 @@ export default async function DataSourcesPage() {
           Upload and manage your project data files
         </p>
       </div>
-      <DataSourcesClient initialDatasets={initialDatasets} />
+      <DataSourcesClient
+        initialDatasets={initialDatasets}
+        projects={projectOptions}
+      />
     </div>
   );
 }

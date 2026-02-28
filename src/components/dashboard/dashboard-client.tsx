@@ -3,6 +3,7 @@
 import {
   useEffect,
   useEffectEvent,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -30,9 +31,13 @@ import {
 } from "@/lib/dashboard/types";
 import { cn } from "@/lib/utils";
 
+type DashboardVariant = "executive" | "project-controls" | "financials";
+
 interface DashboardClientProps {
   datasetIds: string[];
   firstName?: string | null;
+  projectId?: string;
+  variant?: DashboardVariant;
 }
 
 interface ApiErrorPayload {
@@ -89,9 +94,9 @@ function readCache(): DashboardCache | null {
   return parseDashboardCache(window.localStorage.getItem(DASHBOARD_STORAGE_KEY));
 }
 
-function writeCache(data: DashboardResponse) {
+function writeCache(data: DashboardResponse, cacheKey: string) {
   const cache: DashboardCache = {
-    cacheKey: buildDashboardCacheKey(data.datasetIds),
+    cacheKey,
     kpis: data.kpis,
     charts: data.charts,
   };
@@ -103,13 +108,24 @@ function clearCache() {
   window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
 }
 
-async function requestDashboard(cacheKey: string): Promise<DashboardResponse> {
-  if (inFlightRequest && inFlightRequestKey === cacheKey) {
+async function requestDashboard(
+  cacheKey: string,
+  projectId?: string,
+  variant?: DashboardVariant,
+): Promise<DashboardResponse> {
+  const requestKey = `${cacheKey}:${projectId ?? ""}:${variant ?? ""}`;
+
+  if (inFlightRequest && inFlightRequestKey === requestKey) {
     return inFlightRequest;
   }
 
   const request = fetch("/api/dashboard/generate", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...(projectId ? { projectId } : {}),
+      ...(variant ? { variant } : {}),
+    }),
     cache: "no-store",
   }).then(async (response) => {
     const payload = (await response.json().catch(() => null)) as
@@ -138,7 +154,7 @@ async function requestDashboard(cacheKey: string): Promise<DashboardResponse> {
     return parsed;
   });
 
-  inFlightRequestKey = cacheKey;
+  inFlightRequestKey = requestKey;
   inFlightRequest = request;
 
   try {
@@ -253,8 +269,14 @@ function DashboardError({
 export function DashboardClient({
   datasetIds,
   firstName,
+  projectId,
+  variant,
 }: DashboardClientProps) {
-  const cacheKey = buildDashboardCacheKey(datasetIds);
+  const cacheKey = [
+    buildDashboardCacheKey(datasetIds),
+    projectId ?? "",
+    variant ?? "executive",
+  ].join(":");
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -284,13 +306,13 @@ export function DashboardClient({
     setMessage("");
 
     try {
-      const nextDashboard = await requestDashboard(cacheKey);
+      const nextDashboard = await requestDashboard(cacheKey, projectId, variant);
 
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      writeCache(nextDashboard);
+      writeCache(nextDashboard, cacheKey);
       setDashboard(nextDashboard);
       setStatus("ready");
     } catch (error) {
@@ -305,7 +327,7 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, refreshKey]);
+  }, [cacheKey, projectId, refreshKey, variant]);
 
   function handleRefresh() {
     clearCache();
@@ -316,6 +338,36 @@ export function DashboardClient({
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
   const controlsDisabled = status === "loading" || isPending;
+  const groupedCharts = useMemo(() => {
+    if (!dashboard) {
+      return [] as Array<[string, DashboardResponse["charts"]]>;
+    }
+
+    const groups = new Map<string, DashboardResponse["charts"]>();
+
+    for (const chart of dashboard.charts) {
+      const key = chart.group || "General";
+      const existing = groups.get(key);
+
+      if (existing) {
+        existing.push(chart);
+      } else {
+        groups.set(key, [chart]);
+      }
+    }
+
+    return Array.from(groups.entries());
+  }, [dashboard]);
+  const hasChartGroups = useMemo(
+    () =>
+      dashboard
+        ? dashboard.charts.some(
+            (chart) =>
+              typeof chart.group === "string" && chart.group.trim().length > 0,
+          )
+        : false,
+    [dashboard],
+  );
 
   return (
     <div className="space-y-8">
@@ -373,32 +425,75 @@ export function DashboardClient({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-            {dashboard.charts.map((chart) => (
-              <Card key={chart.id} className="border-border bg-card py-0">
-                <CardHeader className="pb-4 pt-6">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <CardTitle>{chart.title}</CardTitle>
-                      <CardDescription>
-                        {chart.type === "pie"
-                          ? "AI-selected distribution view"
-                          : chart.type === "scatter"
-                            ? "AI-selected relationship view"
-                            : "AI-selected trend and comparison view"}
-                      </CardDescription>
-                    </div>
-                    <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-                      {chart.type}
+          {hasChartGroups ? (
+            <div className="space-y-8">
+              {groupedCharts.map(([groupName, charts]) => (
+                <div key={groupName} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {groupName}
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      {charts.length} chart{charts.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-6">
-                  <DynamicChart chart={chart} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+                    {charts.map((chart) => (
+                      <Card key={chart.id} className="border-border bg-card py-0">
+                        <CardHeader className="pb-4 pt-6">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <CardTitle>{chart.title}</CardTitle>
+                              <CardDescription>
+                                {chart.type === "pie"
+                                  ? "AI-selected distribution view"
+                                  : chart.type === "scatter"
+                                    ? "AI-selected relationship view"
+                                    : "AI-selected trend and comparison view"}
+                              </CardDescription>
+                            </div>
+                            <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                              {chart.type}
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pb-6">
+                          <DynamicChart chart={chart} />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+              {dashboard.charts.map((chart) => (
+                <Card key={chart.id} className="border-border bg-card py-0">
+                  <CardHeader className="pb-4 pt-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <CardTitle>{chart.title}</CardTitle>
+                        <CardDescription>
+                          {chart.type === "pie"
+                            ? "AI-selected distribution view"
+                            : chart.type === "scatter"
+                              ? "AI-selected relationship view"
+                              : "AI-selected trend and comparison view"}
+                        </CardDescription>
+                      </div>
+                      <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                        {chart.type}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-6">
+                    <DynamicChart chart={chart} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </>
       ) : null}
     </div>

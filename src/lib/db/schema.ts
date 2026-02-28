@@ -59,6 +59,21 @@ export const syncedProjects = pgTable("synced_projects", {
 });
 
 // ============================================================
+// Internal Projects (user-managed workspace projects)
+// ============================================================
+export const projects = pgTable("projects", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================================
 // Uploaded Datasets (user CSV/XLSX uploads for AI chat analysis)
 // ============================================================
 export const uploadedDatasets = pgTable("uploaded_datasets", {
@@ -66,6 +81,7 @@ export const uploadedDatasets = pgTable("uploaded_datasets", {
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
+  projectId: uuid("project_id").references(() => projects.id),
   category: varchar("category", { length: 50 }).notNull(),
   fileName: varchar("file_name", { length: 255 }).notNull(),
   sheets: jsonb("sheets").notNull(),
