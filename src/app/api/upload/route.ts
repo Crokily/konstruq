@@ -7,7 +7,9 @@ import * as XLSX from "xlsx";
 import { db } from "@/lib/db";
 import { uploadedDatasets, users } from "@/lib/db/schema";
 
-type UploadCategory = "pm" | "erp";
+type UploadCategory = "pm" | "erp" | "uploaded";
+
+const DEFAULT_UPLOAD_CATEGORY: UploadCategory = "uploaded";
 
 interface ParsedSheet {
   sheetName: string;
@@ -19,7 +21,11 @@ interface ParsedSheet {
 function normalizeCategory(value: string): UploadCategory | null {
   const normalized = value.trim().toLowerCase();
 
-  if (normalized === "pm" || normalized === "erp") {
+  if (
+    normalized === "pm" ||
+    normalized === "erp" ||
+    normalized === DEFAULT_UPLOAD_CATEGORY
+  ) {
     return normalized;
   }
 
@@ -111,18 +117,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    if (typeof categoryInput !== "string") {
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-    }
-
-    const category = normalizeCategory(categoryInput);
-
-    if (!category) {
-      return NextResponse.json(
-        { error: "Category must be one of: pm, erp" },
-        { status: 400 },
-      );
-    }
+    const category =
+      typeof categoryInput === "string"
+        ? normalizeCategory(categoryInput) ?? DEFAULT_UPLOAD_CATEGORY
+        : DEFAULT_UPLOAD_CATEGORY;
 
     const fileName = fileInput.name;
     const normalizedFileName = fileName.toLowerCase();
