@@ -90,7 +90,7 @@
         "Verify in browser"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/app/(dashboard)/data-sources/page.tsx (server) and data-sources-client.tsx (client). Use existing Select component from src/components/ui/select.tsx. Projects fetched client-side via fetch or passed as server props."
     },
     {

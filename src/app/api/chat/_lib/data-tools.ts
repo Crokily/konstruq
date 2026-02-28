@@ -22,17 +22,35 @@ const rowFilterSchema = z.object({
 
 type ToolRowFilter = z.infer<typeof rowFilterSchema>;
 
-async function fetchDatasetSheets(appUserId: string, datasetId: string) {
+function buildDatasetFilter(appUserId: string, projectId?: string) {
+  const conditions = [
+    eq(uploadedDatasets.userId, appUserId),
+    eq(uploadedDatasets.isActive, true),
+  ];
+  if (projectId) {
+    conditions.push(eq(uploadedDatasets.projectId, projectId));
+  }
+  return and(...conditions);
+}
+
+async function fetchDatasetSheets(
+  appUserId: string,
+  projectId: string | undefined,
+  datasetId: string,
+) {
+  const conditions = [
+    eq(uploadedDatasets.id, datasetId),
+    eq(uploadedDatasets.userId, appUserId),
+    eq(uploadedDatasets.isActive, true),
+  ];
+  if (projectId) {
+    conditions.push(eq(uploadedDatasets.projectId, projectId));
+  }
+
   const [dataset] = await db
     .select({ sheets: uploadedDatasets.sheets })
     .from(uploadedDatasets)
-    .where(
-      and(
-        eq(uploadedDatasets.id, datasetId),
-        eq(uploadedDatasets.userId, appUserId),
-        eq(uploadedDatasets.isActive, true),
-      ),
-    )
+    .where(and(...conditions))
     .limit(1);
 
   if (!dataset) {
@@ -56,7 +74,7 @@ function castRowFilter(filter?: ToolRowFilter): RowFilter | undefined {
   return filter;
 }
 
-export function createDataTools(appUserId: string) {
+export function createDataTools(appUserId: string, projectId?: string) {
   return {
     listDatasets: tool({
       description:
@@ -71,12 +89,7 @@ export function createDataTools(appUserId: string) {
             sheets: uploadedDatasets.sheets,
           })
           .from(uploadedDatasets)
-          .where(
-            and(
-              eq(uploadedDatasets.userId, appUserId),
-              eq(uploadedDatasets.isActive, true),
-            ),
-          )
+          .where(buildDatasetFilter(appUserId, projectId))
           .orderBy(desc(uploadedDatasets.uploadedAt));
 
         return datasets.map((dataset) => {
@@ -103,7 +116,7 @@ export function createDataTools(appUserId: string) {
         datasetId: z.string().uuid().describe("The UUID of the dataset"),
       }),
       execute: async ({ datasetId }) => {
-        const sheets = await fetchDatasetSheets(appUserId, datasetId);
+        const sheets = await fetchDatasetSheets(appUserId, projectId, datasetId);
 
         if (!sheets) {
           return { error: "Dataset not found or access denied" };
@@ -140,7 +153,7 @@ export function createDataTools(appUserId: string) {
         limit: z.number().int().min(1).max(200).default(50),
       }),
       execute: async ({ datasetId, sheetName, columns, filter, offset, limit }) => {
-        const sheets = await fetchDatasetSheets(appUserId, datasetId);
+        const sheets = await fetchDatasetSheets(appUserId, projectId, datasetId);
 
         if (!sheets) {
           return { error: "Dataset not found" };
@@ -175,6 +188,8 @@ export function createDataTools(appUserId: string) {
         category: z.enum(["pm", "erp", "uploaded"]).optional(),
       }),
       execute: async ({ searchTerm, category }) => {
+        const datasetFilter = buildDatasetFilter(appUserId, projectId);
+
         const datasets = await db
           .select({
             id: uploadedDatasets.id,
@@ -185,15 +200,8 @@ export function createDataTools(appUserId: string) {
           .from(uploadedDatasets)
           .where(
             category
-              ? and(
-                  eq(uploadedDatasets.userId, appUserId),
-                  eq(uploadedDatasets.isActive, true),
-                  eq(uploadedDatasets.category, category),
-                )
-              : and(
-                  eq(uploadedDatasets.userId, appUserId),
-                  eq(uploadedDatasets.isActive, true),
-                ),
+              ? and(datasetFilter, eq(uploadedDatasets.category, category))
+              : datasetFilter,
           );
 
         const query = searchTerm.toLowerCase();
@@ -250,7 +258,7 @@ export function createDataTools(appUserId: string) {
         filter: rowFilterSchema.optional(),
       }),
       execute: async ({ datasetId, sheetName, column, operation, filter }) => {
-        const sheets = await fetchDatasetSheets(appUserId, datasetId);
+        const sheets = await fetchDatasetSheets(appUserId, projectId, datasetId);
 
         if (!sheets) {
           return { error: "Dataset not found" };
