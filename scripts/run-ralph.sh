@@ -1,10 +1,12 @@
 #!/bin/bash
-# Konstruq Ralph Loop
+# Konstruq Ralph Loop — Phase 2: AI Chat
 # Model rules:
-#   Primary: anthropic/claude-opus-4-6:xhigh
-#   Fallback: google-antigravity/claude-opus-4-6-thinking
-#   Coding: codex CLI (gpt-5.3-codex-xhigh) — delegated by pi
-#   Testing: agent-browser — used by pi
+#   Planning/orchestration: anthropic/claude-opus-4-6:xhigh (this script spawns pi with this model)
+#   Coding: codex CLI (gpt-5.3-codex-xhigh) — delegated by pi within each iteration
+#   Testing: agent-browser — used by pi within each iteration
+#   Discord notifications: gemini-3-flash via discord-agent
+
+set -euo pipefail
 cd /home/ubuntu/konstruq
 
 MAX_ITERATIONS=${1:-15}
@@ -22,7 +24,8 @@ if [ "$CURRENT" != "$BRANCH" ]; then
 fi
 
 echo "╔═══════════════════════════════════════════════════════╗"
-echo "║           🏗️  Konstruq Ralph Loop Started             ║"
+echo "║      🏗️  Konstruq Phase 2 Ralph Loop Started          ║"
+echo "║      🤖 AI Chat + Data Upload + Dynamic Charts        ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 
 PRIMARY_MODEL="anthropic/claude-opus-4-6:xhigh"
@@ -44,42 +47,42 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo "═══════════════════════════════════════════════════════"
   echo "  🔄 Iteration $i/$MAX_ITERATIONS — $DONE/$TOTAL done, $REMAINING remaining"
   echo "  📋 Next: $NEXT"
-  echo "  ⏰ $(date '+%H:%M:%S')"
+  echo "  ⏰ $(date '+%Y-%m-%d %H:%M:%S')"
   echo "  🤖 Model: $PRIMARY_MODEL"
   echo "═══════════════════════════════════════════════════════"
 
-  ITER_LOG="/tmp/ralph-iter-$i.log"
+  ITER_LOG="/tmp/ralph-phase2-iter-$i.log"
 
   # Primary model
-  timeout 900 pi -m "$PRIMARY_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
+  timeout 1200 pi -m "$PRIMARY_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
   EXIT_CODE=$?
 
   if [ $EXIT_CODE -ne 0 ]; then
     echo "  ⚠️ Primary model failed (exit $EXIT_CODE). Trying fallback: $FALLBACK_MODEL"
-    timeout 900 pi -m "$FALLBACK_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
+    timeout 1200 pi -m "$FALLBACK_MODEL" --print < "$PROMPT_TEMPLATE" > "$ITER_LOG" 2>&1
     EXIT_CODE=$?
 
     if [ $EXIT_CODE -ne 0 ]; then
       echo "  ❌ Both models failed at iteration $i. Exit code: $EXIT_CODE"
-      echo "  Last 20 lines of log:"
-      tail -20 "$ITER_LOG" 2>/dev/null
+      echo "  Last 30 lines of log:"
+      tail -30 "$ITER_LOG" 2>/dev/null
       exit 1
     fi
   fi
 
-  echo "  --- Iteration $i result (last 20 lines) ---"
-  tail -20 "$ITER_LOG"
+  echo "  --- Iteration $i result (last 30 lines) ---"
+  tail -30 "$ITER_LOG"
 
   if grep -q "<promise>COMPLETE</promise>" "$ITER_LOG"; then
     echo ""
     echo "╔═══════════════════════════════════════════════════════╗"
-    echo "║  ✅ All stories COMPLETE at iteration $i!             ║"
+    echo "║  ✅ Phase 2 ALL STORIES COMPLETE at iteration $i!    ║"
     echo "╚═══════════════════════════════════════════════════════╝"
     exit 0
   fi
 
-  echo "  ✓ Iteration $i done. Next in 3s..."
-  sleep 3
+  echo "  ✓ Iteration $i done. Next in 5s..."
+  sleep 5
 done
 
 echo ""; echo "⚠️ Max iterations ($MAX_ITERATIONS) reached."

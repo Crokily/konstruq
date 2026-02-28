@@ -1,6 +1,6 @@
-# Ralph Iteration — Konstruq Autonomous Coding Agent
+# Ralph Iteration — Konstruq Phase 2: AI Chat
 
-You are an autonomous coding agent executing one iteration of the Ralph loop for the **Konstruq** project (construction analytics dashboard).
+You are an autonomous coding agent executing one iteration of the Ralph loop for the **Konstruq** project (construction analytics dashboard). This is Phase 2: AI Chat with dynamic data analysis.
 
 ## Model Usage Rules — MANDATORY
 
@@ -27,7 +27,7 @@ You MUST follow these model assignment rules for every action:
 
 1. **Read `prd.json`** in the project root
 2. **Read `progress.txt`** — check the `Codebase Patterns` section FIRST
-3. **Check branch** — ensure you're on `ralph/phase1-mvp`. If not, create from main.
+3. **Check branch** — ensure you're on `ralph/phase2-ai-chat`. If not, create from current HEAD.
 4. **Pick story** — select the **highest priority** story where `passes: false`
 5. **Delegate implementation to Codex** — prepare a detailed prompt with:
    - The story's requirements and acceptance criteria
@@ -67,7 +67,18 @@ You MUST follow these model assignment rules for every action:
 - **Framework**: Next.js 16 App Router with src/ directory
 - **Auth**: Clerk (keys in .env.local)
 - **DB**: Neon PostgreSQL + Drizzle ORM (connection string in .env.local)
-- **Charts**: Recharts (NOT Tremor — incompatible with React 19)
+- **Charts**: Recharts v3 (NOT Tremor — incompatible with React 19)
 - **UI**: shadcn/ui + Tailwind CSS 4
-- **Procore**: Sandbox OAuth credentials in .env.local
-- **Theme**: Dark (slate-950 bg, amber-500 accent)
+- **Theme**: Dark (slate-950 bg, amber-500 accent, slate-800 cards)
+- **LLM**: Mistral Large via `@ai-sdk/mistral` (MISTRAL_API_KEY in .env.local)
+- **AI SDK**: Vercel AI SDK `ai` package — useChat hook for frontend, streamText for backend
+
+## Phase 2 Key Architecture
+
+- Users upload CSV/XLSX files → parsed to JSON → stored in `uploaded_datasets` table
+- Chat API loads ALL user datasets → injects into Mistral system prompt as JSON
+- AI analyzes data freely — no rigid schema or typed DataProvider for uploaded data
+- AI returns text + optional ```chart / ```table / ```kpi code blocks
+- Frontend parses blocks and renders with Recharts / shadcn components
+- 128K context window easily holds typical construction datasets (~30K tokens)
+- Existing Phase 1 dashboard/mock data remains untouched
