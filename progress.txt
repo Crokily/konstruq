@@ -171,3 +171,25 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Auto-create user pattern (from US-103) is used in both server component and delete route — consistent pattern
   - Server component fetches data, client component manages state — good separation for upload interactivity
 ---
+
+## 2026-02-28T02:08:00Z - US-105: Chat page — full chat UI with useChat
+- Created src/app/(dashboard)/chat/page.tsx as "use client" component
+- Uses useChat hook from ai/react pointing to /api/chat
+- Full-height layout: h-[calc(100vh-4rem)] with rounded card container
+- Scrollable messages area + fixed bottom input bar
+- Auto-scroll to bottom on new messages via useEffect + messagesEndRef
+- User messages: right-aligned, amber-500 bg, dark text, "You" label
+- Assistant messages: left-aligned, slate-800 bg, light text, "Konstruq AI" label
+- Max-width 80% on message bubbles
+- Streaming indicator: pulsing amber dot + "Thinking..." text when isLoading
+- Empty state: centered welcome with title, subtitle, 4 suggestion prompt buttons in 2x2 grid
+- Suggestions use append() to submit programmatically
+- Input bar: text input + Send button, disabled when empty/loading
+- Added "AI Chat" nav item to sidebar with MessageSquare icon, before Data Sources
+- Files changed: src/app/(dashboard)/chat/page.tsx (new), src/components/layout/sidebar.tsx
+- **Learnings for future iterations:**
+  - Clerk test instance requires email 2FA for all sign-ins (even new API-created users). Workaround: temporarily add route to proxy.ts public routes for browser testing, then revert
+  - useChat's append() is the right way to submit suggestion prompts programmatically
+  - Codex model must be gpt-5.3-codex (anthropic models not supported on ChatGPT-connected Codex)
+  - Full-height chat in padded layout: use h-[calc(100vh-4rem)] to account for p-8 padding
+---

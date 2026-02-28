@@ -94,7 +94,7 @@
         "Verify in browser"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "useChat returns { messages, input, handleInputChange, handleSubmit, isLoading }. Message type has role and content. Scroll to bottom on new messages."
     },
     {
