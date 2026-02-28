@@ -6,9 +6,8 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
 } from "react";
-import { AlertTriangle, Info, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, Info, Loader2, Sparkles } from "lucide-react";
 
 import { ChartDataTable, getChartDataTableColumns } from "@/components/charts/chart-data-table";
 import { DynamicChart } from "@/components/charts/dynamic-chart";
@@ -365,8 +364,6 @@ export function DashboardClient({
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
   const requestIdRef = useRef(0);
 
   const loadDashboard = useEffectEvent(async ({ force }: { force: boolean }) => {
@@ -418,18 +415,10 @@ export function DashboardClient({
   });
 
   useEffect(() => {
-    void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, datasetIds, refreshKey]);
-
-  function handleRefresh() {
-    clearCacheEntry(cacheKey);
-    startTransition(() => {
-      setRefreshKey((current) => current + 1);
-    });
-  }
+    void loadDashboard({ force: false });
+  }, [cacheKey, datasetIds]);
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
-  const controlsDisabled = (status === "loading" && !dashboard) || isPending;
   const groupedCharts = useMemo(() => {
     if (!dashboard) {
       return [] as Array<[string, DashboardResponse["charts"]]>;
@@ -463,7 +452,7 @@ export function DashboardClient({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-4">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-medium tracking-[0.16em] text-cyan-300 uppercase">
             <Sparkles className="h-3.5 w-3.5" />
@@ -475,26 +464,10 @@ export function DashboardClient({
             </h1>
             <p className="mt-1 text-muted-foreground">
               Your dashboard is generated from {datasetIds.length} active dataset
-              {datasetIds.length === 1 ? "" : "s"} and cached locally for faster reloads.
+              {datasetIds.length === 1 ? "" : "s"} 
             </p>
           </div>
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={controlsDisabled}
-          className="self-start"
-        >
-          <RefreshCw
-            className={cn(
-              "h-4 w-4",
-              isRefreshing || controlsDisabled ? "animate-spin" : "",
-            )}
-          />
-          Refresh
-        </Button>
       </div>
 
       {status === "loading" && !dashboard ? <PageLoading label="Loading dashboard" /> : null}
@@ -502,8 +475,11 @@ export function DashboardClient({
       {status === "error" ? (
         <DashboardError
           message={message}
-          onRetry={handleRefresh}
-          isPending={isPending}
+          onRetry={() => {
+            clearCacheEntry(cacheKey);
+            void loadDashboard({ force: true });
+          }}
+          isPending={isRefreshing}
         />
       ) : null}
 
