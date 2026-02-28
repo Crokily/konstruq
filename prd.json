@@ -260,7 +260,7 @@
         "npm run build passes with zero errors"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "This is the final cleanup story. Before deleting each file, grep the entire src/ directory to confirm zero imports. Be conservative \u2014 only delete files with zero remaining imports. The DynamicChart component and chart-from-spec.tsx are used by the AI dashboard system and must be kept. Run full build at the end to verify."
     }
   ]

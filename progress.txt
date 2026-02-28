@@ -67,3 +67,44 @@ Started: 2026-02-28
 - DashboardClient sends projectId when available
 - Files: generate/route.ts, dashboard-client.tsx
 ---
+
+## 2026-02-28 16:15 UTC - US-009: Integrate construction analytics prompt
+- Enhanced identity to "Advanced Construction Predictive & Forecasting Analytics Agent"
+- Added 4 new sections: Data Understanding, Forecasting Methodology, Forecast Metrics, Bias Minimisation
+- All existing tool workflow/output format/integrity rules preserved unchanged
+- Files: system-prompt.ts
+---
+
+## 2026-02-28 16:25 UTC - US-010: Extract shared dashboard generation utilities
+- Created src/lib/dashboard/generate.ts with shared functions
+- DASHBOARD_PROMPTS map for 3 variants (executive, project-controls, financials)
+- Route.ts refactored to thin wrapper calling shared utils
+- Files: generate.ts (new), route.ts (refactored)
+---
+
+## 2026-02-28 16:30 UTC - US-011: Main dashboard chart priorities + grouping
+- Executive prompt enhanced with data-aware chart priority rules
+- ChartSpec.group optional field added
+- DashboardClient renders grouped sections when charts have groups
+- Files: generate.ts, types.ts, dashboard-client.tsx
+---
+
+## 2026-02-28 16:35 UTC - US-012: AI-generated project controls dashboard
+- /projects/[id] now shows AI-generated dashboard from project's datasets
+- project-controls prompt focuses on schedule, tasks, delays, equipment
+- DashboardClient accepts variant prop
+- Files: projects/[id]/page.tsx (rewritten), generate.ts, dashboard-client.tsx
+---
+
+## 2026-02-28 16:40 UTC - US-013: AI-generated financial dashboard
+- /financials now shows AI-generated portfolio financial dashboard
+- Financials prompt focuses on budget, EVM, cash flow, cost detail
+- Files: financials/page.tsx (rewritten), loading.tsx (deleted), generate.ts
+---
+
+## 2026-02-28 16:50 UTC - US-014: Remove MockDataProvider and dead code
+- Deleted 21 files: all mock data, providers, interface, static charts, DashboardWorkspace
+- Removed 3,863 lines of dead code
+- Full build verified passing
+- **Learnings:** Always grep before deleting; delete parent dead components first, then re-check children
+---
