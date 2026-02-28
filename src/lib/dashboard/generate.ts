@@ -1,0 +1,209 @@
+import { mistral } from "@ai-sdk/mistral";
+import { generateText } from "ai";
+import { and, desc, eq } from "drizzle-orm";
+
+import {
+  buildDatasetsContext,
+  MAX_DATA_TOKENS,
+  normalizeSheets,
+  type DatasetContextItem,
+} from "@/lib/ai/dataset-context";
+import { db } from "@/lib/db";
+import { projects, uploadedDatasets } from "@/lib/db/schema";
+
+const PREVIEW_ROW_LIMIT = 30;
+
+export type DashboardVariant = "executive" | "project-controls" | "financials";
+
+export class DashboardGenerationError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "DashboardGenerationError";
+    this.status = status;
+  }
+}
+
+const EXECUTIVE_DASHBOARD_SYSTEM_PROMPT = [
+  "You are a data analytics assistant. Analyze the uploaded datasets and generate a business dashboard.",
+  "Return ONLY valid JSON with no markdown code fences and no explanation outside the JSON.",
+  "",
+  "Output schema:",
+  "{",
+  '  "kpis": [',
+  '    { "label": string, "value": number|string, "format": "currency"|"percentage"|"number"|"text", "description": string }',
+  "  ],",
+  '  "charts": [',
+  "    {",
+  '      "id": string,',
+  '      "type": "bar"|"line"|"area"|"pie"|"scatter",',
+  '      "title": string,',
+  '      "data": [...],',
+  '      "xKey"?: string,',
+  '      "yKeys"?: string[],',
+  '      "nameKey"?: string,',
+  '      "valueKey"?: string,',
+  '      "colors": string[]',
+  "    }",
+  "  ]",
+  "}",
+  "",
+  "Rules:",
+  "- Generate 3-5 KPI cards with key metrics such as totals, averages, counts, margins, completion, utilization, or variance.",
+  "- Generate 4-8 charts that provide meaningful business insights.",
+  "- Each chart should have 5-25 data points. Aggregate if the raw data has more rows.",
+  '- For monetary values use format "currency"; percentages use "percentage".',
+  '- Color palette: ["#4f46e5","#06b6d4","#10b981","#f59e0b","#ef4444","#8b5cf6"]',
+  "- Choose chart types by data nature: bar=comparisons, line/area=trends, pie=distributions, scatter=correlations.",
+  "- Use only columns and values that actually exist in the provided datasets.",
+  "- Ensure every chart includes the keys required by its type.",
+  "- For scatter charts, use a numeric xKey and exactly one yKeys entry.",
+  "- The data array for each chart must be plain JSON objects only.",
+].join("\n");
+
+const VARIANT_PROMPT_INTROS: Record<DashboardVariant, string[]> = {
+  executive: [
+    "Create an executive dashboard from these uploaded datasets.",
+    "Prefer the most business-relevant metrics and aggregations you can infer from the available columns.",
+    "If multiple datasets overlap, combine them only when the relationship is clear from the data.",
+    "Do not invent columns, labels, or calculations that are not supported by the provided data.",
+  ],
+  "project-controls": [
+    "Create a project controls dashboard from these uploaded datasets.",
+    "Prioritize schedule tracking, delays, dependencies, task completion, and equipment utilisation metrics.",
+    "Do not invent columns, labels, or calculations that are not supported by the provided data.",
+  ],
+  financials: [
+    "Create a financial controls dashboard from these uploaded datasets.",
+    "Prioritize budget control, earned value performance, cash flow, claims, and cost breakdown metrics.",
+    "Do not invent columns, labels, or calculations that are not supported by the provided data.",
+  ],
+};
+
+export const DASHBOARD_PROMPTS: Record<DashboardVariant, string> = {
+  executive: EXECUTIVE_DASHBOARD_SYSTEM_PROMPT,
+  "project-controls": [
+    "You are a construction project controls analytics assistant. Analyze the uploaded datasets and generate a project controls dashboard.",
+    "Return ONLY valid JSON with no markdown code fences and no explanation outside the JSON.",
+    "[same output schema as executive]",
+    "[same rules as executive]",
+    "- Focus on: schedule tracking, task completion, delay analysis, dependencies, and equipment utilisation.",
+    "- Prioritize charts showing: Baseline vs Actual progress, Schedule Variance, Task Completion %, Delay Cause analysis, and Equipment Utilisation.",
+  ].join("\n"),
+  financials: [
+    "You are a construction financial analytics assistant. Analyze the uploaded datasets and generate a financial controls dashboard.",
+    "Return ONLY valid JSON with no markdown code fences and no explanation outside the JSON.",
+    "[same output schema as executive]",
+    "[same rules as executive]",
+    "- Focus on: budget control, earned value management, cash flow, claims, and cost breakdowns.",
+    "- Prioritize charts showing: Budget vs Actual vs Forecast, EVM S-Curve (PV/EV/AC), CPI/SPI trends, Cash Flow analysis, and Cost Breakdown by category.",
+  ].join("\n"),
+};
+
+export async function fetchUserDatasets(
+  appUserId: string,
+  projectId?: string,
+): Promise<DatasetContextItem[]> {
+  if (projectId) {
+    const ownedProject = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, appUserId)))
+      .limit(1);
+
+    if (ownedProject.length === 0) {
+      throw new DashboardGenerationError("Project not found", 404);
+    }
+  }
+
+  const conditions = [
+    eq(uploadedDatasets.userId, appUserId),
+    eq(uploadedDatasets.isActive, true),
+  ];
+
+  if (projectId) {
+    conditions.push(eq(uploadedDatasets.projectId, projectId));
+  }
+
+  const datasets = await db
+    .select({
+      id: uploadedDatasets.id,
+      category: uploadedDatasets.category,
+      fileName: uploadedDatasets.fileName,
+      sheets: uploadedDatasets.sheets,
+    })
+    .from(uploadedDatasets)
+    .where(and(...conditions))
+    .orderBy(desc(uploadedDatasets.uploadedAt));
+
+  return datasets.map((dataset) => ({
+    id: dataset.id,
+    category: dataset.category,
+    fileName: dataset.fileName,
+    sheets: normalizeSheets(dataset.sheets),
+  }));
+}
+
+export function buildDashboardUserPrompt(
+  datasets: DatasetContextItem[],
+  variant: DashboardVariant,
+): string {
+  return [
+    ...VARIANT_PROMPT_INTROS[variant],
+    buildDatasetsContext(datasets, {
+      previewRowLimit: PREVIEW_ROW_LIMIT,
+      maxDataTokens: MAX_DATA_TOKENS,
+    }),
+  ].join("\n\n");
+}
+
+export async function callDashboardLLM(
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<string> {
+  const result = await generateText({
+    model: mistral("mistral-large-latest"),
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: 0.2,
+    maxSteps: 1,
+  });
+
+  return result.text;
+}
+
+export function parseJsonResponse(text: string): unknown {
+  const trimmed = text.trim();
+  const candidates = [trimmed];
+
+  if (trimmed.startsWith("```")) {
+    candidates.push(
+      trimmed
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "")
+        .trim(),
+    );
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    candidates.push(trimmed.slice(firstBrace, lastBrace + 1));
+  }
+
+  for (const candidate of candidates) {
+    if (candidate.length === 0) {
+      continue;
+    }
+
+    try {
+      return JSON.parse(candidate) as unknown;
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error("AI response was not valid JSON");
+}
