@@ -26,3 +26,9 @@ Started: 2026-02-28
 - Files changed: prd.json,scripts/ralph-v3-loop.sh,src/lib/charting/spec.ts,src/lib/dashboard/types.ts,
 - Summary: Skill usage: no extra skill was needed; this was a localized type/parsing update.  **Modified Files** 1. [src/lib/charting/spec.ts](/home/ubuntu/konstruq/src/lib/charting/spec.ts) 2. [src/lib/dashboard/types.ts](/home/ubuntu/konstruq/src/lib/dashboard/types.ts) 
 ---
+
+## 2026-02-28 17:02 UTC - US-002: Chart/Table tab toggle for chat chart blocks
+- Codex execution: 322s
+- Files changed: prd.json,src/components/chat/chart-block.tsx,
+- Summary: **Skill Usage** Used `frontend-design` (UI component implementation) and `agent-browser` (browser verification).  **Modified Files** - [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 
+---

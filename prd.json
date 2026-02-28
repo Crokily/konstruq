@@ -36,7 +36,7 @@
         "Verify in browser"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing Tabs component from src/components/ui/tabs.tsx and Table from src/components/ui/table.tsx. The chart data is in result.spec.data (array of objects). For column headers, use [spec.xAxisKey, ...spec.metrics.map(m => m.key)] for non-pie charts, or [spec.nameKey/xAxisKey, spec.valueKey/metrics[0].key] for pie. Format numbers with Intl.NumberFormat."
     },
     {
