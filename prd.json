@@ -1,177 +1,267 @@
 {
   "project": "Konstruq",
-  "branchName": "ralph/phase2-ai-chat",
-  "description": "Phase 2: AI Chat with dynamic data analysis — file upload, Mistral Large chat, inline chart rendering",
+  "branchName": "ralph/konstruq-v2",
+  "description": "Project-centric architecture, AI-generated dashboards for all pages, and construction analytics prompt optimization",
   "qualityChecks": {
-    "typecheck": "npx tsc --noEmit",
-    "lint": "npx eslint . --fix"
+    "typecheck": "cd /home/ubuntu/konstruq && npx tsc --noEmit",
+    "lint": "cd /home/ubuntu/konstruq && npx eslint . --fix"
   },
   "userStories": [
     {
-      "id": "US-101",
-      "title": "Install AI SDK dependencies and create chat API route skeleton",
-      "description": "As a developer, I need AI SDK packages installed and a basic /api/chat route streaming from Mistral Large.",
+      "id": "US-001",
+      "title": "Add projects table and modify uploadedDatasets schema",
+      "description": "As a developer, I need the database schema to support user-created projects with datasets linked to them.",
       "acceptanceCriteria": [
-        "ai and @ai-sdk/mistral packages installed in package.json",
-        "MISTRAL_API_KEY read from environment",
-        "POST /api/chat route at src/app/api/chat/route.ts accepts { messages } body",
-        "Route uses streamText with mistral('mistral-large-latest') and returns toDataStreamResponse()",
-        "Basic system prompt: construction data analysis assistant",
-        "Typecheck passes",
-        "Lint passes"
+        "New `projects` table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK → users.id, notNull), name (varchar 255, notNull), description (text, nullable), status (varchar 50, default 'active', notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "uploadedDatasets table gains projectId column: uuid FK → projects.id, nullable",
+        "Run `npx drizzle-kit push` successfully against Neon",
+        "Clear all existing rows from uploaded_datasets table via SQL: DELETE FROM uploaded_datasets",
+        "Typecheck passes"
       ],
       "priority": 1,
-      "passes": true,
-      "notes": "env var MISTRAL_API_KEY should be added to .env.local. Use: import { mistral } from '@ai-sdk/mistral'; import { streamText } from 'ai';"
+      "passes": false,
+      "notes": "Use drizzle-kit push (not generate). DB is Neon Postgres. Schema file is src/lib/db/schema.ts. Env vars in .env.local. Also export the new table from schema.ts."
     },
     {
-      "id": "US-102",
-      "title": "Database schema for uploaded datasets and chat sessions",
-      "description": "As a developer, I need DB tables to store user-uploaded data files parsed as JSON.",
+      "id": "US-002",
+      "title": "Projects CRUD API endpoints",
+      "description": "As a user, I need API endpoints to create, list, and delete my projects.",
       "acceptanceCriteria": [
-        "New table uploaded_datasets in src/lib/db/schema.ts: id(uuid), userId(uuid FK), category(varchar), fileName(varchar), sheets(jsonb), meta(jsonb), isActive(boolean), uploadedAt(timestamp)",
-        "Run npm run db:push to push schema to Neon successfully",
+        "POST /api/projects — creates project for authenticated user, accepts JSON { name, description? }, returns { id, name, description, status, createdAt }",
+        "GET /api/projects — returns array of user's projects ordered by updatedAt desc, each includes datasetCount (count of active uploadedDatasets for that project)",
+        "DELETE /api/projects/[id] — sets project status to 'archived', returns { success: true }",
+        "All endpoints require auth via Clerk auth(), resolve appUserId via resolveAppUserId from src/lib/db/app-user.ts",
+        "Returns 401 for unauthenticated, 404 for not found, 400 for invalid input",
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "sheets column stores: [{sheetName: string, columns: string[], rowCount: number, rows: Record<string,unknown>[]}]. Use existing drizzle.config.ts which loads .env.local via dotenv."
+      "passes": false,
+      "notes": "Create files: src/app/api/projects/route.ts (GET + POST) and src/app/api/projects/[id]/route.ts (DELETE). Use drizzle-orm query patterns consistent with existing code (eq, and, desc from drizzle-orm). Use db from src/lib/db/index.ts."
     },
     {
-      "id": "US-103",
-      "title": "File upload API — parse CSV and XLSX to JSON",
-      "description": "As a developer, I need an API route that accepts file uploads, parses CSV/XLSX into JSON, and stores in DB.",
+      "id": "US-003",
+      "title": "Projects list page with create dialog",
+      "description": "As a user, I want to see my projects and create new ones from the Projects page.",
       "acceptanceCriteria": [
-        "papaparse and xlsx packages installed (plus @types/papaparse)",
-        "POST /api/upload route at src/app/api/upload/route.ts",
-        "Accepts multipart/form-data with file and category fields",
-        "CSV parsed with papaparse (header:true), XLSX all sheets parsed with xlsx",
-        "Each sheet stored as {sheetName, columns, rowCount, rows}",
-        "Saved to uploaded_datasets table with userId from Clerk auth",
-        "Returns JSON with id, fileName, category, sheets summary (no full rows in response)",
-        "Error handling: no file, unsupported format, parse failure",
-        "Typecheck passes"
-      ],
-      "priority": 3,
-      "passes": true,
-      "notes": "Use request.formData() for file access. CSV: new TextDecoder().decode(arrayBuffer). XLSX: read(arrayBuffer, {type:'array'}). Clerk auth: import { auth } from '@clerk/nextjs/server'."
-    },
-    {
-      "id": "US-104",
-      "title": "Data Sources page — upload UI and dataset list",
-      "description": "As a user, I want a page to upload my data files and see what I've uploaded.",
-      "acceptanceCriteria": [
-        "New route /data-sources with page at src/app/(dashboard)/data-sources/page.tsx",
-        "Data Sources link added to sidebar navigation with appropriate icon",
-        "Two sections: PM Data and ERP Data, each with upload button and dataset list",
-        "Upload calls POST /api/upload with correct category",
-        "List shows: fileName, sheet count, row count, upload date per dataset",
-        "Delete button per dataset calls DELETE /api/upload/[id] route",
-        "DELETE /api/upload/[id] route implemented to remove from DB",
-        "Loading and success/error feedback during upload",
-        "Dark theme consistent with app",
+        "/projects page is a client component that fetches projects from GET /api/projects on mount",
+        "Displays project cards showing: name, status badge, dataset count, formatted created date",
+        "Create Project button opens a shadcn Dialog with name (required input) and description (optional textarea) fields",
+        "Submitting dialog calls POST /api/projects and adds new project to the list without page reload",
+        "Each project card is a Link to /projects/[id]",
+        "Empty state message shown when no projects exist with a prompt to create first project",
+        "Delete button on each card calls DELETE /api/projects/[id] and removes from list",
+        "All MockDataProvider imports removed from /projects/page.tsx",
         "Typecheck passes",
         "Verify in browser"
       ],
-      "priority": 4,
-      "passes": true,
-      "notes": "Use 'use client' for upload interactions. Server component for initial data load. Add to sidebar in src/components/layout/sidebar.tsx. Use existing Card/Button from shadcn."
+      "priority": 3,
+      "passes": false,
+      "notes": "Replace entire content of src/app/(dashboard)/projects/page.tsx. Remove MockDataProvider usage. Use existing UI components from src/components/ui/ (Card, Button, Dialog, Badge). Keep the PageHeader component. Style consistent with existing dark theme."
     },
     {
-      "id": "US-105",
-      "title": "Chat page — full chat UI with useChat",
-      "description": "As a user, I want a dedicated chat page to talk to the AI assistant.",
+      "id": "US-004",
+      "title": "Upload API accepts projectId",
+      "description": "As a developer, the upload endpoint must accept and store a projectId with each dataset.",
       "acceptanceCriteria": [
-        "New route /chat with page at src/app/(dashboard)/chat/page.tsx",
-        "AI Chat link added to sidebar navigation with MessageSquare icon",
-        "Full-height chat layout: scrollable messages + fixed input bar at bottom",
-        "Uses useChat hook from ai/react pointing to /api/chat",
-        "User messages right-aligned amber, assistant messages left-aligned",
-        "Streaming: tokens appear incrementally",
-        "Empty state: welcome message with suggestion prompts",
-        "Dark theme (slate-950 bg, slate-800 cards)",
+        "POST /api/upload accepts projectId field in FormData (required string, must be valid uuid)",
+        "Validates that project with given projectId exists, belongs to authenticated user, and has status != 'archived'",
+        "Stores projectId in uploadedDatasets record when inserting",
+        "Returns projectId in response JSON alongside existing fields",
+        "Returns 400 with error message if projectId is missing or invalid",
+        "Returns 404 if project not found or doesn't belong to user",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Modify src/app/api/upload/route.ts. The projectId comes from FormData (not JSON body) since uploads use multipart. Add validation query against projects table before insert."
+    },
+    {
+      "id": "US-005",
+      "title": "Data Sources page with project selector",
+      "description": "As a user, I want to select a project before uploading data, and see which project each dataset belongs to.",
+      "acceptanceCriteria": [
+        "Upload area includes a Select dropdown populated from GET /api/projects (fetched on mount)",
+        "Upload button is disabled until a project is selected from dropdown",
+        "Selected projectId is appended to FormData when uploading",
+        "Dataset list items show the project name as a small label/badge",
+        "DatasetItem type gains projectId and projectName optional fields",
+        "Server-side initial data fetch in data-sources/page.tsx joins or maps project names to datasets",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "useChat returns { messages, input, handleInputChange, handleSubmit, isLoading }. Message type has role and content. Scroll to bottom on new messages."
+      "passes": false,
+      "notes": "Modify src/app/(dashboard)/data-sources/page.tsx (server) and data-sources-client.tsx (client). Use existing Select component from src/components/ui/select.tsx. Projects fetched client-side via fetch or passed as server props."
     },
     {
-      "id": "US-106",
-      "title": "Wire uploaded data into chat context",
-      "description": "As a developer, I need the chat API to load user datasets and include them in the AI system prompt.",
+      "id": "US-006",
+      "title": "Chat data tools filter by projectId",
+      "description": "As a developer, the chat backend tools must support optional project-scoped dataset queries.",
       "acceptanceCriteria": [
-        "/api/chat loads all uploaded_datasets for current user via Clerk auth",
-        "System prompt lists each dataset: fileName, category, sheets with columns and rowCount",
-        "For datasets fitting in context (<80K tokens est): full row data as JSON in prompt",
-        "For oversized datasets: schema + first 20 rows with truncation note",
-        "Token estimation: JSON.stringify(rows).length / 4",
-        "System prompt instructs AI about chart/table/kpi output formats",
+        "POST /api/chat accepts optional projectId (string uuid or null) in request body alongside messages",
+        "createDataTools signature becomes createDataTools(appUserId: string, projectId?: string)",
+        "listDatasets tool: when projectId provided, adds eq(uploadedDatasets.projectId, projectId) to WHERE clause; when undefined, returns all user datasets (backward compatible)",
+        "fetchDatasetSheets helper (used by getDatasetSchema, queryDatasetRows, aggregateColumn): adds projectId filter when provided",
+        "searchDatasets tool: adds projectId filter to dataset query when provided",
+        "Chat system prompt gains one line: 'When a project context is active, all data queries are scoped to that project's datasets.'",
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": true,
-      "notes": "Load datasets: db.select().from(uploadedDatasets).where(eq(uploadedDatasets.userId, appUserId)). Need to resolve Clerk userId to app user id, or store clerkId in uploaded_datasets directly."
+      "passes": false,
+      "notes": "Modify src/app/api/chat/route.ts to extract projectId from body. Modify src/app/api/chat/_lib/data-tools.ts for the tools. The projectId filter should be added to the existing 'and(...)' clauses."
     },
     {
-      "id": "US-107",
-      "title": "Chart rendering in chat messages",
-      "description": "As a user, I want to see charts inline in AI responses when visualization is appropriate.",
+      "id": "US-007",
+      "title": "Chat UI project selector",
+      "description": "As a user, I want to select a project in the chat interface to scope my conversation to that project's data.",
       "acceptanceCriteria": [
-        "System prompt instructs AI to output chart specs in ```chart code blocks",
-        "Chart spec: {type, title, xAxisKey, metrics: [{key, label, color?}], data: [...]}",
-        "Supported types: bar, line, area, pie, scatter, stacked-bar, composed",
-        "New component src/components/chat/chart-from-spec.tsx maps spec to Recharts",
-        "New component src/components/chat/message-renderer.tsx parses text+chart+table parts",
-        "Install react-markdown and remark-gfm for text rendering",
-        "Charts use dark theme (amber/blue/green palette, slate backgrounds)",
-        "Charts responsive: fill width, 300px height",
+        "Chat page header area (between title and clear button) includes a compact Select dropdown for project selection",
+        "Dropdown options: 'All Projects' (value empty string) + user's projects from GET /api/projects",
+        "Selected projectId is stored in a React state and passed to ChatRuntimeProvider",
+        "ChatRuntimeProvider passes projectId via useChat's body parameter so every message sends it",
+        "Switching projects does NOT clear the conversation messages",
+        "Conversation objects in localStorage Conversation type gain optional projectId?: string field",
+        "When creating a new conversation, it inherits the currently selected projectId",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": "Parse content with regex: /```chart\\n([\\s\\S]*?)```/g. Recharts components: BarChart, LineChart, AreaChart, PieChart, ScatterChart, ComposedChart. All need 'use client'."
+      "passes": false,
+      "notes": "Modify src/components/chat/chat-runtime-provider.tsx to accept projectId prop and pass in useChat body. Modify src/app/(dashboard)/chat/page.tsx for the selector UI and state. Modify src/lib/chat/history.ts Conversation type. The ChatRuntimeProvider is in the dashboard layout so it wraps all pages - may need to refactor to accept dynamic projectId."
     },
     {
-      "id": "US-108",
-      "title": "Chat polish — tables, KPI badges, error handling",
-      "description": "As a user, I want tables and KPIs in chat, plus graceful error handling.",
+      "id": "US-008",
+      "title": "Dashboard generate API accepts projectId",
+      "description": "As a developer, the dashboard generation endpoint must support optional project scoping.",
       "acceptanceCriteria": [
-        "AI can output ```table blocks: {headers: string[], rows: string[][]}",
-        "AI can output ```kpi blocks: {items: [{label, value, trend?, description?}]}",
-        "message-renderer handles chart, table, kpi block types",
-        "Tables use shadcn Table component with dark styling",
-        "KPI rendered as horizontal badge row",
-        "Malformed JSON in blocks falls back to plain code display",
-        "Error messages shown in chat on API failure",
-        "Clear chat button to reset conversation",
-        "Typecheck passes",
-        "Verify in browser"
+        "POST /api/dashboard/generate accepts optional projectId in request body JSON",
+        "When projectId provided: dataset query adds eq(uploadedDatasets.projectId, projectId) filter",
+        "When no projectId: queries all user's active datasets (existing behavior preserved)",
+        "Validates projectId belongs to authenticated user when provided (same pattern as other endpoints)",
+        "Response structure unchanged (DashboardResponse with datasetIds, kpis, charts)",
+        "DashboardClient updated: sends POST body as JSON with projectId when available",
+        "Typecheck passes"
       ],
       "priority": 8,
-      "passes": true,
-      "notes": "Reuse existing Table from src/components/ui/table.tsx. KPI badges similar to src/components/charts/evm-kpi-badges.tsx style."
+      "passes": false,
+      "notes": "Modify src/app/api/dashboard/generate/route.ts. Change from no-body POST to JSON body POST. Update dashboard-client.tsx requestDashboard function to send JSON body. The main dashboard page (/dashboard) continues to not send projectId (portfolio view)."
     },
     {
-      "id": "US-109",
-      "title": "End-to-end demo flow with sample data",
-      "description": "As a hackathon judge, I want to see the complete upload→chat→chart flow work.",
+      "id": "US-009",
+      "title": "Integrate construction analytics prompt into chat system",
+      "description": "As a developer, I need to merge the advanced construction predictive analytics methodology from docs/agentprompt.txt into the chat system prompt without breaking existing functionality.",
       "acceptanceCriteria": [
-        "demo-data/pm-projects.csv created: 6 projects with name, type, status, city, dates, contract_value, percent_complete",
-        "demo-data/erp-financials.csv created: financial data with budget, actual_cost, committed, labor, material, subcontract costs",
-        "Both files uploadable via Data Sources page",
-        "Chat correctly answers: 'What data do I have?'",
-        "Chat correctly answers: 'Which project has the highest contract value?'",
-        "Chat produces bar chart for: 'Show budget vs actual cost chart'",
-        "Chat produces table for: 'Calculate cost variance for each project'",
-        "Typecheck passes",
-        "Verify in browser"
+        "CHAT_SYSTEM_PROMPT in src/app/api/chat/_lib/system-prompt.ts is updated",
+        "Identity line enhanced to: 'Advanced Construction Predictive & Forecasting Analytics Agent'",
+        "PRESERVED UNCHANGED: Tool workflow section (lines starting with 'Tool workflow (mandatory)')",
+        "PRESERVED UNCHANGED: Output format rules section (chart/table/kpi block formats)",
+        "PRESERVED UNCHANGED: Source and schema integrity rules section",
+        "ENHANCED: Chart policy section gains visualization guidance from agentprompt.txt section 4 (confidence intervals, fan charts, heatmaps, risk networks)",
+        "NEW SECTION: 'Data Understanding & Pre-Processing' from agentprompt.txt section 1",
+        "NEW SECTION: 'Forecasting Methodology' from agentprompt.txt section 2 — framed as analytical reasoning framework, not literal model execution",
+        "NEW SECTION: 'Key Forecast Metrics' from agentprompt.txt section 3 (cost, schedule, resource, risk forecasting specs)",
+        "NEW SECTION: 'Bias Minimisation Rules' from agentprompt.txt section 5",
+        "All new sections placed AFTER the existing functional instruction sections",
+        "Typecheck passes"
       ],
       "priority": 9,
       "passes": false,
-      "notes": "This is the integration test story. Ensure dev server is running, upload files, then test chat interactions via browser. Demo data should have realistic construction values ($10M-$70M range)."
+      "notes": "Read docs/agentprompt.txt for source content. The key challenge is merging without breaking the tool workflow and output format blocks that the frontend parser depends on. New sections should be additive, placed at the end of the prompt string. Forecasting methodology should note that the LLM provides analytical guidance using these frameworks rather than executing actual statistical models."
+    },
+    {
+      "id": "US-010",
+      "title": "Extract shared dashboard generation utilities",
+      "description": "As a developer, I need reusable utilities for dashboard generation so three dashboard variants share common infrastructure.",
+      "acceptanceCriteria": [
+        "New file src/lib/dashboard/generate.ts created with shared functions",
+        "fetchUserDatasets(appUserId: string, projectId?: string) — returns DatasetContextItem[] from DB with optional project filter",
+        "callDashboardLLM(systemPrompt: string, userPrompt: string) — calls Mistral via generateText, returns raw text",
+        "parseJsonResponse(text: string) — extracts and parses JSON from LLM response (reuses existing parseJsonText logic)",
+        "buildDashboardUserPrompt(datasets: DatasetContextItem[], variant: string) — builds the user prompt with dataset context",
+        "DASHBOARD_PROMPTS map exported: { executive: string, 'project-controls': string, financials: string }",
+        "Executive prompt is the existing DASHBOARD_SYSTEM_PROMPT content",
+        "project-controls and financials prompts are placeholder strings (to be filled in US-011/012/013)",
+        "/api/dashboard/generate/route.ts refactored to use these shared utilities",
+        "Existing dashboard generation behavior unchanged for executive variant",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Move dataset fetching and LLM calling logic out of route.ts into the shared lib. The route.ts becomes thin: auth check → call shared utils → return response. The variant parameter determines which system prompt to use."
+    },
+    {
+      "id": "US-011",
+      "title": "Enhance main dashboard prompt with construction chart priorities",
+      "description": "As a user, I want the executive dashboard to prioritize construction-relevant charts based on my uploaded data types.",
+      "acceptanceCriteria": [
+        "Executive system prompt in DASHBOARD_PROMPTS includes data-aware chart priority rules",
+        "Priority rules: cost/budget data → Budget vs Actual, Cost Variance Trend, Top Variance Cost Codes; schedule data → Schedule Variance, SPI Trend, Task Completion %; EVM data → EVM S-Curve, CPI/SPI Trend; labor/resource data → Resource Utilisation, Productivity Trend; subcontractor data → On-Time Delivery %, Quality Scorecard; cash flow data → Cashflow Forecast vs Actual, Outstanding Aging",
+        "Prompt references Dashboard #1 tab structure from docs/3dashboard.txt for chart grouping guidance",
+        "ChartSpec type in src/lib/dashboard/types.ts gains optional group?: string field",
+        "parseDashboardContent and parseChartSpec handle optional group field",
+        "DashboardClient component: when charts have group values, renders section headers to group charts visually",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Update the executive prompt string in src/lib/dashboard/generate.ts DASHBOARD_PROMPTS.executive. Update types.ts for group field. Update dashboard-client.tsx to group charts by group field when present."
+    },
+    {
+      "id": "US-012",
+      "title": "AI-generated project controls dashboard for /projects/[id]",
+      "description": "As a user, I want /projects/[id] to show an AI-generated dashboard focused on project controls using that project's uploaded datasets.",
+      "acceptanceCriteria": [
+        "/projects/[id]/page.tsx completely replaced — no MockDataProvider usage",
+        "Page fetches project info from DB (name, description, status)",
+        "Page renders DashboardClient (or variant) that calls POST /api/dashboard/generate with { projectId: id, variant: 'project-controls' }",
+        "project-controls system prompt in DASHBOARD_PROMPTS focuses on: Master Schedule Tracking (Baseline vs Actual, Schedule Variance), Lookahead Planning (Task Readiness, Dependencies), Delay Analysis (Delay Causes, Critical Path Impact), Equipment Utilisation — referencing Dashboard #2 from docs/3dashboard.txt",
+        "Page shows project name and description in header area",
+        "Shows empty state component if project has no datasets (with link to /data-sources)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "The DashboardClient component currently calls /api/dashboard/generate with POST and no body. Need to make it accept optional projectId and variant props to include in the request body. Or create a thin wrapper. The project-controls prompt should produce charts relevant to construction project management."
+    },
+    {
+      "id": "US-013",
+      "title": "AI-generated financial dashboard for /financials",
+      "description": "As a user, I want the Financials page to show an AI-generated financial analytics dashboard across all my projects.",
+      "acceptanceCriteria": [
+        "/financials/page.tsx completely replaced — no MockDataProvider usage",
+        "Page renders DashboardClient that calls POST /api/dashboard/generate with { variant: 'financials' } (no projectId = portfolio level)",
+        "Financials system prompt in DASHBOARD_PROMPTS focuses on: Budget Control (Budget vs Actual vs Forecast, Cost Variance), EVM (S-Curve, CPI/SPI, EAC Forecast), Cash Flow & Claims (Forecast vs Actual, Aging, Retention), Cost Detail (Breakdown by Code, Change Order Impact) — referencing Dashboard #3 from docs/3dashboard.txt",
+        "Shows empty state if user has no datasets",
+        "Loading state shows skeleton consistent with main dashboard",
+        "All old chart component imports removed (AgingChart, CashFlowChart, ChangeOrderWaterfall)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Similar pattern to main dashboard page. The financials prompt should emphasize financial KPIs and cost analytics. Remove all MockDataProvider and static chart imports."
+    },
+    {
+      "id": "US-014",
+      "title": "Remove MockDataProvider and dead code",
+      "description": "As a developer, I need to clean up all unused mock data and dead code after the AI generation migration.",
+      "acceptanceCriteria": [
+        "src/lib/data/mock/ directory deleted (aging.ts, change-orders.ts, financials.ts, projects.ts, schedules.ts)",
+        "src/lib/data/providers/mock.ts deleted",
+        "src/lib/data/providers/interface.ts kept ONLY if still imported by live code; deleted otherwise",
+        "src/lib/data/index.ts updated or deleted — remove all mock-related exports",
+        "src/components/dashboard/dashboard-workspace.tsx deleted (confirmed zero imports)",
+        "No remaining imports of any deleted file in any .ts/.tsx file (verified via grep)",
+        "src/lib/types/procore.ts and src/lib/types/sage.ts retained (referenced by dataConnections/syncedProjects schema)",
+        "Static chart components (aging-chart, cash-flow-chart, change-order-waterfall, evm-chart, evm-kpi-badges, project-health-scatter, project-status-chart, project-table, revenue-expense-chart, kpi-cards, cost-breakdown-chart) — delete any that are no longer imported by any live page",
+        "Typecheck passes",
+        "npm run build passes with zero errors"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "This is the final cleanup story. Before deleting each file, grep the entire src/ directory to confirm zero imports. Be conservative — only delete files with zero remaining imports. The DynamicChart component and chart-from-spec.tsx are used by the AI dashboard system and must be kept. Run full build at the end to verify."
     }
   ]
 }
