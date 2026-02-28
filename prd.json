@@ -111,7 +111,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Load datasets: db.select().from(uploadedDatasets).where(eq(uploadedDatasets.userId, appUserId)). Need to resolve Clerk userId to app user id, or store clerkId in uploaded_datasets directly."
     },
     {

@@ -193,3 +193,24 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - Codex model must be gpt-5.3-codex (anthropic models not supported on ChatGPT-connected Codex)
   - Full-height chat in padded layout: use h-[calc(100vh-4rem)] to account for p-8 padding
 ---
+
+## 2026-02-28T02:15:00Z - US-106: Wire uploaded data into chat context
+- Modified src/app/api/chat/route.ts (271 insertions, 20 deletions — 85% rewrite)
+- Added Clerk auth + auto-create user pattern (consistent with upload/data-sources routes)
+- Loads all active uploaded_datasets for authenticated user via `and(eq(userId), eq(isActive, true))`
+- JSONB sheets column normalized with strict type guards: `normalizeSheets()` + `normalizeRows()`
+- Dynamic system prompt built with:
+  - Base Konstruq AI identity + data analysis instructions
+  - Output format rules for ```chart, ```table, ```kpi code blocks
+  - Per-dataset context: fileName, category, schema, rows (full or truncated)
+- Token budgeting: estimates tokens as `JSON.stringify(rows).length / 4`, 80K budget
+  - If total exceeds budget, truncates largest datasets first (20 rows preview)
+- System prompt instructs AI: never invent numbers, use actual data, note missing data
+- Streaming preserved: `streamText()` + `toDataStreamResponse()`
+- Files changed: src/app/api/chat/route.ts
+- **Learnings for future iterations:**
+  - JSONB columns from Drizzle come as `unknown` — need explicit runtime validation/casting
+  - Token budget strategy: sort datasets by size descending, truncate largest first until under budget
+  - `and()` from drizzle-orm combines multiple `eq()` conditions for compound WHERE clauses
+  - `CoreMessage` type from `ai` package provides proper typing for messages array
+---
