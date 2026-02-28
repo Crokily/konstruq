@@ -143,7 +143,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/app/api/dashboard/generate/route.ts. Change from no-body POST to JSON body POST. Update dashboard-client.tsx requestDashboard function to send JSON body. The main dashboard page (/dashboard) continues to not send projectId (portfolio view)."
     },
     {
