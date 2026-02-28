@@ -26,6 +26,7 @@ export interface ChartSpec {
   id: string;
   type: ChartType;
   title: string;
+  group?: string;
   data: Record<string, unknown>[];
   xKey?: string;
   yKeys?: string[];
@@ -133,6 +134,10 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
     typeof value.title === "string" && value.title.trim().length > 0
       ? value.title.trim()
       : `Chart ${index + 1}`;
+  const group =
+    typeof value.group === "string" && value.group.trim().length > 0
+      ? value.group.trim()
+      : undefined;
   const data = Array.isArray(value.data)
     ? value.data.filter((item): item is Record<string, unknown> => isRecord(item))
     : [];
@@ -146,6 +151,7 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
       id,
       type,
       title,
+      group,
       data,
       nameKey: value.nameKey,
       valueKey: value.valueKey,
@@ -167,6 +173,7 @@ function parseChartSpec(value: unknown, index: number): ChartSpec | null {
     id,
     type,
     title,
+    group,
     data,
     xKey: value.xKey,
     yKeys: type === "scatter" ? yKeys.slice(0, 1) : yKeys,

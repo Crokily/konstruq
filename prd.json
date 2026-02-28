@@ -186,7 +186,7 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Move dataset fetching and LLM calling logic out of route.ts into the shared lib. The route.ts becomes thin: auth check \u2192 call shared utils \u2192 return response. The variant parameter determines which system prompt to use."
     },
     {
