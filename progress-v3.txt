@@ -20,3 +20,9 @@ Started: 2026-02-28
 - Codex CLI: use `codex exec --model gpt-5.3-codex-xhigh --yolo --output-last-message <file> - < <prompt> > <log> 2>&1`
 
 ---
+
+## 2026-02-28 16:56 UTC - US-001: Extend chart specs with table data and methodology metadata
+- Codex execution: 134s
+- Files changed: prd.json,scripts/ralph-v3-loop.sh,src/lib/charting/spec.ts,src/lib/dashboard/types.ts,
+- Summary: Skill usage: no extra skill was needed; this was a localized type/parsing update.  **Modified Files** 1. [src/lib/charting/spec.ts](/home/ubuntu/konstruq/src/lib/charting/spec.ts) 2. [src/lib/dashboard/types.ts](/home/ubuntu/konstruq/src/lib/dashboard/types.ts) 
+---
