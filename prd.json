@@ -72,7 +72,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/app/api/upload/route.ts. The projectId comes from FormData (not JSON body) since uploads use multipart. Add validation query against projects table before insert."
     },
     {

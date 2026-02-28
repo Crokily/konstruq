@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FileSpreadsheet, Loader2, Trash2, Upload } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,6 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type DatasetCategory = "pm" | "erp" | "uploaded";
 
@@ -26,10 +34,18 @@ export interface DatasetItem {
   fileName: string;
   sheets: DatasetSheet[];
   uploadedAt: string;
+  projectId?: string;
+  projectName?: string;
+}
+
+export interface ProjectOption {
+  id: string;
+  name: string;
 }
 
 interface DataSourcesClientProps {
   initialDatasets: DatasetItem[];
+  projects: ProjectOption[];
 }
 
 interface UploadResponse {
@@ -37,6 +53,7 @@ interface UploadResponse {
   fileName?: string;
   category?: string;
   sheets?: unknown;
+  projectId?: string;
   error?: string;
 }
 
@@ -132,23 +149,40 @@ function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
+export function DataSourcesClient({
+  initialDatasets,
+  projects,
+}: DataSourcesClientProps) {
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [datasets, setDatasets] = useState<DatasetItem[]>(() =>
     sortDatasets(initialDatasets),
   );
   const [uploading, setUploading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [status, setStatus] = useState<UploadStatus>(initialStatus);
+  const projectNameById = useMemo(
+    () => new Map(projects.map((project) => [project.id, project.name])),
+    [projects],
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function uploadFile(file: File) {
+  async function uploadFile(file: File, projectId: string) {
+    if (projectId.trim().length === 0) {
+      setStatus({
+        type: "error",
+        message: "Select a project before uploading a file.",
+      });
+      return;
+    }
+
     setUploading(true);
     setStatus(initialStatus);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("projectId", projectId);
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -165,6 +199,11 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
         throw new Error("Upload response did not include dataset id");
       }
 
+      const uploadedProjectId =
+        typeof payload.projectId === "string" && payload.projectId.length > 0
+          ? payload.projectId
+          : projectId;
+
       const nextDataset: DatasetItem = {
         id: payload.id,
         category:
@@ -174,6 +213,8 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
         fileName: typeof payload.fileName === "string" ? payload.fileName : file.name,
         sheets: normalizeSheets(payload.sheets),
         uploadedAt: new Date().toISOString(),
+        projectId: uploadedProjectId,
+        projectName: projectNameById.get(uploadedProjectId),
       };
 
       setDatasets((prev) =>
@@ -222,7 +263,7 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
   }
 
   function openFilePicker() {
-    if (uploading) {
+    if (uploading || selectedProjectId.trim().length === 0) {
       return;
     }
 
@@ -238,7 +279,7 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
       return;
     }
 
-    await uploadFile(file);
+    await uploadFile(file, selectedProjectId);
   }
 
   return (
@@ -260,19 +301,37 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
                 Accepted formats: .csv, .xlsx, .xls
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={openFilePicker}
-              disabled={uploading}
-              className="bg-amber-500 text-amber-950 hover:bg-amber-400"
-            >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              {uploading ? "Uploading..." : "Upload File"}
-            </Button>
+            <div className="flex w-full flex-col gap-2 sm:w-56">
+              <Select
+                value={selectedProjectId}
+                onValueChange={setSelectedProjectId}
+                disabled={uploading || projects.length === 0}
+              >
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={openFilePicker}
+                disabled={uploading || selectedProjectId.trim().length === 0}
+                className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400"
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploading ? "Uploading..." : "Upload File"}
+              </Button>
+            </div>
           </div>
           <input
             ref={fileInputRef}
@@ -310,11 +369,17 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-4"
                 >
                   <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4 text-amber-500" />
-                      <p className="truncate text-sm font-medium text-foreground">
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                         {dataset.fileName}
                       </p>
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 text-xs text-muted-foreground"
+                      >
+                        {dataset.projectName ?? "Unknown project"}
+                      </Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>{dataset.sheets.length} sheets</span>
