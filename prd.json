@@ -165,7 +165,7 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Read docs/agentprompt.txt for source content. The key challenge is merging without breaking the tool workflow and output format blocks that the frontend parser depends on. New sections should be additive, placed at the end of the prompt string. Forecasting methodology should note that the LLM provides analytical guidance using these frameworks rather than executing actual statistical models."
     },
     {
