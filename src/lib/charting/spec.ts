@@ -402,6 +402,21 @@ function buildRenderHints(spec: ChartSpec): ChartRenderHints {
   };
 }
 
+function normalizeFieldKey(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function isLooselyMatchedField(required: string, source: string): boolean {
+  const left = normalizeFieldKey(required);
+  const right = normalizeFieldKey(source);
+
+  if (!left || !right) {
+    return false;
+  }
+
+  return left === right || left.includes(right) || right.includes(left);
+}
+
 function hasSourceCoverage(spec: ChartSpec): boolean {
   const sources = spec.sources ?? [];
 
@@ -409,14 +424,17 @@ function hasSourceCoverage(spec: ChartSpec): boolean {
     return false;
   }
 
-  const sourceColumns = new Set(
-    sources.flatMap((source) => source.columns.map((column) => column.trim().toLowerCase())),
-  );
+  const sourceColumns = sources.flatMap((source) => source.columns);
   const requiredKeys = [spec.xAxisKey, ...spec.metrics.map((metric) => metric.key)].map((key) =>
-    key.trim().toLowerCase(),
+    key.trim(),
   );
 
-  return requiredKeys.every((key) => sourceColumns.has(key));
+  const matchedCount = requiredKeys.filter((required) =>
+    sourceColumns.some((sourceColumn) => isLooselyMatchedField(required, sourceColumn)),
+  ).length;
+
+  // Relaxed rule: treat source mapping as valid when most required fields match.
+  return matchedCount >= Math.max(1, requiredKeys.length - 1);
 }
 
 export function normalizeChartSpec(raw: unknown): NormalizeChartSpecResult | null {
@@ -439,11 +457,12 @@ export function normalizeChartSpec(raw: unknown): NormalizeChartSpecResult | nul
     return null;
   }
 
-  if (!hasSourceCoverage(baseSpec)) {
-    return null;
-  }
-
   const warnings: string[] = [];
+  if ((baseSpec.sources?.length ?? 0) === 0) {
+    warnings.push("Source file references are not attached to this chart yet.");
+  } else if (!hasSourceCoverage(baseSpec)) {
+    warnings.push("Some source columns could not be matched exactly; showing chart with best-effort mapping.");
+  }
 
   let spec = withDefaultColors(baseSpec);
   spec = enforceIntentRecommendation(spec, warnings);

@@ -159,7 +159,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
         </p>
       ) : null}
       {warnings && warnings.length > 0 ? (
-        <div className="rounded-md border border-amber-300/40 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-700 dark:text-amber-300">
+        <div className="rounded-md border border-border/70 bg-muted/40 px-2.5 py-2 text-xs text-muted-foreground">
           {warnings[0]}
         </div>
       ) : null}

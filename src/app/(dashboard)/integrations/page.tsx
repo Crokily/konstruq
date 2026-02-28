@@ -23,22 +23,7 @@ import { db } from "@/lib/db";
 import { dataConnections, users } from "@/lib/db/schema";
 
 import { ProcoreSyncButton } from "./procore-sync-button";
-
-const procoreIntegration = {
-  features: ["Projects", "Budgets", "RFIs", "Change Orders", "Schedules"],
-};
-
-const sageIntacctIntegration = {
-  features: [
-    "General Ledger",
-    "Accounts Payable",
-    "Accounts Receivable",
-    "Cost Types",
-    "Project Contracts",
-  ],
-};
-
-const PROCORE_PROVIDER = "procore";
+import { PROCORE_PROVIDER, procoreIntegration, sageIntacctIntegration } from "./constants";
 
 function formatLastSync(value: Date | string | null): string | null {
   if (!value) {
