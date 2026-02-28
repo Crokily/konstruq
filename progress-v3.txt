@@ -32,3 +32,9 @@ Started: 2026-02-28
 - Files changed: prd.json,src/components/chat/chart-block.tsx,
 - Summary: **Skill Usage** Used `frontend-design` (UI component implementation) and `agent-browser` (browser verification).  **Modified Files** - [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 
 ---
+
+## 2026-02-28 17:04 UTC - US-003: Update chat system prompt to suppress formula text and embed methodology
+- Codex execution: 98s
+- Files changed: prd.json,src/app/api/chat/_lib/system-prompt.ts,
+- Summary: Skill usage: none (no listed skill matched this backend prompt-only edit).  **Modified Files** - [src/app/api/chat/_lib/system-prompt.ts](/home/ubuntu/konstruq/src/app/api/chat/_lib/system-prompt.ts)  
+---

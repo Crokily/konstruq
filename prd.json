@@ -54,7 +54,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/app/api/chat/_lib/system-prompt.ts. Add the methodology suppression rules to the 'Output format rules' section. Add methodology to the chart JSON example. Keep all existing sections intact \u2014 this is additive. The key behavioral change: AI should produce cleaner, more concise text with rich chart metadata."
     },
     {
