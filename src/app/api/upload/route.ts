@@ -157,6 +157,13 @@ export async function POST(request: NextRequest) {
         category,
         fileName,
         sheets,
+        meta: {
+          sheets: sheets.map(({ sheetName, columns, rowCount }) => ({
+            sheetName,
+            columns,
+            rowCount,
+          })),
+        },
       })
       .returning({
         id: uploadedDatasets.id,

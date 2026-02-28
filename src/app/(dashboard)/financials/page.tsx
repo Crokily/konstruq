@@ -1,6 +1,7 @@
 import { AgingChart } from "@/components/charts/aging-chart";
 import { CashFlowChart } from "@/components/charts/cash-flow-chart";
 import { ChangeOrderWaterfall } from "@/components/charts/change-order-waterfall";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   Card,
   CardContent,
@@ -38,15 +39,14 @@ export default async function FinancialsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Financial Overview</h1>
-        <p className="mt-1 text-muted-foreground">
-          Portfolio financial health from Sage Intacct
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        title="Financial Overview"
+        description="Portfolio cash position, receivables exposure, and contract variation controls."
+      />
 
       <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-border bg-card">
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle>Cash Flow Forecast</CardTitle>
             <CardDescription>
@@ -58,7 +58,7 @@ export default async function FinancialsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle>Aging Analysis</CardTitle>
             <CardDescription>
@@ -71,7 +71,7 @@ export default async function FinancialsPage() {
         </Card>
       </div>
 
-      <Card className="border-border bg-card">
+      <Card className="border-border/70 bg-card/90 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle>Change Order Waterfall</CardTitle>
           <CardDescription>

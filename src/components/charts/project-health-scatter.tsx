@@ -17,6 +17,14 @@ import type { ProjectHealthMatrixItem, UnifiedProject } from "@/lib/data";
 interface ProjectHealthScatterProps {
   matrix: ProjectHealthMatrixItem[];
   projects: UnifiedProject[];
+  onPointClick?: (point: {
+    id: string;
+    name: string;
+    schedulePercent: number;
+    budgetPercent: number;
+    contractValue: number;
+    healthLabel: "On Track" | "At Risk" | "Over Budget";
+  }) => void;
 }
 
 interface ScatterDatum {
@@ -93,7 +101,11 @@ function ProjectHealthTooltip({
   );
 }
 
-export function ProjectHealthScatter({ matrix, projects }: ProjectHealthScatterProps) {
+export function ProjectHealthScatter({
+  matrix,
+  projects,
+  onPointClick,
+}: ProjectHealthScatterProps) {
   const contractValueByProject = new Map(
     projects.map((project) => [project.id, project.totalValue])
   );
@@ -148,7 +160,24 @@ export function ProjectHealthScatter({ matrix, projects }: ProjectHealthScatterP
             strokeDasharray="5 5"
           />
           <Tooltip content={<ProjectHealthTooltip />} cursor={{ stroke: "var(--muted-foreground)" }} />
-          <Scatter data={chartData}>
+          <Scatter
+            data={chartData}
+            onClick={(point) => {
+              const datum = point as ScatterDatum | undefined;
+              if (!datum) {
+                return;
+              }
+
+              onPointClick?.({
+                id: datum.id,
+                name: datum.name,
+                schedulePercent: datum.schedulePercent,
+                budgetPercent: datum.budgetPercent,
+                contractValue: datum.contractValue,
+                healthLabel: datum.healthLabel,
+              });
+            }}
+          >
             {chartData.map((entry) => (
               <Cell key={entry.id} fill={entry.color} />
             ))}
