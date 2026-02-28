@@ -1,0 +1,100 @@
+# Ralph Progress Log — Konstruq V3
+Started: 2026-02-28
+
+## Codebase Patterns
+- Database: Neon Postgres via drizzle-orm/neon-http. Schema at src/lib/db/schema.ts. Push via `npx drizzle-kit push`.
+- Auth: Clerk. All API routes use `const { userId } = await auth()` then `resolveAppUserId(userId)` from src/lib/db/app-user.ts.
+- API routes: Next.js 16 App Router. Route handlers export async functions (GET/POST/DELETE/PATCH). Return NextResponse.json().
+- UI: shadcn/ui components in src/components/ui/. Dark theme. Amber/cyan accent colors.
+- AI: Mistral via @ai-sdk/mistral. `generateText` for dashboard generation, `streamText` for chat.
+- Dashboard: AI-generated via POST /api/dashboard/generate. DashboardClient renders KPI cards + DynamicChart.
+- Chat: useChat from ai/react wrapped in ChatRuntimeProvider at layout level. Tools in _lib/data-tools.ts.
+- Data: uploadedDatasets stores parsed CSV/XLSX rows as JSONB in sheets column.
+- Two separate ChartSpec types: chat (src/lib/charting/spec.ts) and dashboard (src/lib/dashboard/types.ts).
+- Chat message rendering: src/components/chat/message-renderer.tsx parses ```chart / ```table / ```kpi blocks.
+- Chat chart rendering: ChartBlock → ChartFromSpec (Recharts-based).
+- Dashboard chart rendering: DashboardClient → DynamicChart.
+- Shared dashboard generation utils: src/lib/dashboard/generate.ts (fetchUserDatasets, callDashboardLLM, parseJsonResponse).
+- Env vars: .env.local (DATABASE_URL, MISTRAL_API_KEY, CLERK_SECRET_KEY etc.)
+- Styling: Tailwind v4 with tw-animate-css. Global styles in globals.css.
+- Codex CLI: use `codex exec --model gpt-5.3-codex-xhigh --yolo --output-last-message <file> - < <prompt> > <log> 2>&1`
+
+---
+
+## 2026-02-28 16:56 UTC - US-001: Extend chart specs with table data and methodology metadata
+- Codex execution: 134s
+- Files changed: prd.json,scripts/ralph-v3-loop.sh,src/lib/charting/spec.ts,src/lib/dashboard/types.ts,
+- Summary: Skill usage: no extra skill was needed; this was a localized type/parsing update.  **Modified Files** 1. [src/lib/charting/spec.ts](/home/ubuntu/konstruq/src/lib/charting/spec.ts) 2. [src/lib/dashboard/types.ts](/home/ubuntu/konstruq/src/lib/dashboard/types.ts) 
+---
+
+## 2026-02-28 17:02 UTC - US-002: Chart/Table tab toggle for chat chart blocks
+- Codex execution: 322s
+- Files changed: prd.json,src/components/chat/chart-block.tsx,
+- Summary: **Skill Usage** Used `frontend-design` (UI component implementation) and `agent-browser` (browser verification).  **Modified Files** - [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 
+---
+
+## 2026-02-28 17:04 UTC - US-003: Update chat system prompt to suppress formula text and embed methodology
+- Codex execution: 98s
+- Files changed: prd.json,src/app/api/chat/_lib/system-prompt.ts,
+- Summary: Skill usage: none (no listed skill matched this backend prompt-only edit).  **Modified Files** - [src/app/api/chat/_lib/system-prompt.ts](/home/ubuntu/konstruq/src/app/api/chat/_lib/system-prompt.ts)  
+---
+
+## 2026-02-28 17:11 UTC - US-004: Methodology popover on chart blocks
+- Codex execution: 417s
+- Files changed: prd.json,src/components/chat/chart-block.tsx,src/components/ui/popover.tsx,
+- Summary: **Modified/Created Files** 1. [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 2. [src/components/ui/popover.tsx](/home/ubuntu/konstruq/src/components/ui/popover.tsx)  **What Changed** 
+---
+
+## 2026-02-28 17:20 UTC - US-005: Chart/Table tabs on dashboard charts
+- Codex execution: 546s
+- Files changed: prd.json,src/components/charts/chart-data-table.tsx,src/components/chat/chart-block.tsx,src/components/dashboard/dashboard-client.tsx,
+- Summary: Implemented US-005 only.  **Modified/Created Files** - Created: [src/components/charts/chart-data-table.tsx](/home/ubuntu/konstruq/src/components/charts/chart-data-table.tsx) - Modified: [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) 
+---
+
+## 2026-02-28 17:22 UTC - US-006: Database schema for custom dashboards and widgets
+- Codex execution: 74s
+- Files changed: prd.json,src/lib/db/schema.ts,
+- Summary: Implemented US-006 exactly as requested.  **Modified Files** - [src/lib/db/schema.ts](/home/ubuntu/konstruq/src/lib/db/schema.ts)  
+---
+
+## 2026-02-28 17:31 UTC - US-007: Custom dashboards CRUD API
+- Codex execution: 171s
+- Files changed: prd.json,scripts/ralph-v3-loop.sh,src/app/api/custom-dashboards/[id]/route.ts,src/app/api/custom-dashboards/route.ts,
+- Summary: Implemented US-007 with the `next-best-practices` skill (route-handler/auth/error semantics).  **Files Created** - [src/app/api/custom-dashboards/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/route.ts) - [src/app/api/custom-dashboards/[id]/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/%5Bid%5D/route.ts) 
+---
+
+## 2026-02-28 17:36 UTC - US-008: Dashboard widgets CRUD API
+- Codex execution: 261s
+- Files changed: prd.json,src/app/(dashboard)/data-sources/data-sources-client.tsx,src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts,src/app/api/custom-dashboards/[id]/widgets/reorder/route.ts,src/app/api/custom-dashboards/[id]/widgets/route.ts,src/components/dashboard/dashboard-client.tsx,src/lib/dashboard/types.ts,
+- Summary: Implemented US-008 with new widget CRUD/reorder API routes, following existing auth/Drizzle/Next.js 16 route-handler patterns.  **Created Files** - [src/app/api/custom-dashboards/[id]/widgets/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/[id]/widgets/route.ts) - [src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts) 
+---
+
+## 2026-02-28 17:45 UTC - US-009: Custom dashboards list UI under project detail
+- Codex execution: 568s
+- Files changed: prd.json,src/app/(dashboard)/projects/[id]/custom-dashboards-section.tsx,src/app/(dashboard)/projects/[id]/page.tsx,
+- Summary: Implemented US-009 on `ralph/konstruq-v3` with a dedicated client section under project detail.  **Modified/Created Files** - [src/app/(dashboard)/projects/[id]/page.tsx](/home/ubuntu/konstruq/src/app/(dashboard)/projects/[id]/page.tsx) - [src/app/(dashboard)/projects/[id]/custom-dashboards-section.tsx](/home/ubuntu/konstruq/src/app/(dashboard)/projects/[id]/custom-dashboards-section.tsx) 
+---
+
+## 2026-02-28 18:29 UTC - US-011: Dashboard sidebar AI chat panel
+- Codex execution: 937s
+- Files changed: prd.json,src/app/api/custom-dashboards/[id]/chat/route.ts,src/app/api/custom-dashboards/_lib/builder-prompt.ts,src/components/dashboard/custom-dashboard-canvas.tsx,
+- Summary: Implemented `US-011` in three files:  - [src/app/api/custom-dashboards/_lib/builder-prompt.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/_lib/builder-prompt.ts) - [src/app/api/custom-dashboards/[id]/chat/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/[id]/chat/route.ts) - [src/components/dashboard/custom-dashboard-canvas.tsx](/home/ubuntu/konstruq/src/components/dashboard/custom-dashboard-canvas.tsx) 
+---
+
+## 2026-02-28 18:47 UTC - US-012: Add-to-Dashboard button on chat-generated widgets
+- Codex execution: 1035s
+- Files changed: prd.json,src/components/chat/chart-block.tsx,src/components/chat/message-renderer.tsx,src/components/chat/page/chat-thread.tsx,src/components/dashboard/custom-dashboard-canvas.tsx,
+- Summary: **Files** Modified: - [src/components/chat/chart-block.tsx](/home/ubuntu/konstruq/src/components/chat/chart-block.tsx) - [src/components/chat/message-renderer.tsx](/home/ubuntu/konstruq/src/components/chat/message-renderer.tsx) - [src/components/chat/page/chat-thread.tsx](/home/ubuntu/konstruq/src/components/chat/page/chat-thread.tsx) 
+---
+
+## 2026-02-28 19:05 UTC - US-013: Dashboard refresh — regenerate widgets with latest data
+- Codex execution: 1065s
+- Files changed: prd.json,src/app/api/custom-dashboards/[id]/refresh/route.ts,src/components/dashboard/custom-dashboard-canvas.tsx,
+- Summary: **Files** - [src/app/api/custom-dashboards/[id]/refresh/route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/[id]/refresh/route.ts) - [src/components/dashboard/custom-dashboard-canvas.tsx](/home/ubuntu/konstruq/src/components/dashboard/custom-dashboard-canvas.tsx)  **What Changed** 
+---
+
+## 2026-02-28 19:17 UTC - US-014: Navigation integration and My Dashboards page
+- Codex execution: 720s
+- Files changed: prd.json,src/app/(dashboard)/dashboards/dashboards-client.tsx,src/app/(dashboard)/dashboards/page.tsx,src/app/api/custom-dashboards/route.ts,src/components/layout/sidebar.tsx,
+- Summary: Implemented US-014 on the current branch.  **Changed** - Added `My Dashboards` to the sidebar between Projects and Financials in [sidebar.tsx](/home/ubuntu/konstruq/src/components/layout/sidebar.tsx#L20). - Extended `GET /api/custom-dashboards` to join `projects.name` so dashboard lists include `projectName` in [route.ts](/home/ubuntu/konstruq/src/app/api/custom-dashboards/route.ts#L44). 
+---

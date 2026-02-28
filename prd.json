@@ -19,8 +19,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": "Two separate ChartSpec types exist: one for chat (src/lib/charting/spec.ts) and one for dashboard (src/lib/dashboard/types.ts). Both need the methodology field. The chat spec has normalizeChartSpec(); the dashboard spec has parseChartSpec(). Keep changes minimal — just add the optional field and parse it."
+      "passes": true,
+      "notes": "Two separate ChartSpec types exist: one for chat (src/lib/charting/spec.ts) and one for dashboard (src/lib/dashboard/types.ts). Both need the methodology field. The chat spec has normalizeChartSpec(); the dashboard spec has parseChartSpec(). Keep changes minimal \u2014 just add the optional field and parse it."
     },
     {
       "id": "US-002",
@@ -30,13 +30,13 @@
         "ChartBlock component (src/components/chat/chart-block.tsx) wraps content in shadcn Tabs with two tabs: Chart (default) and Table",
         "Chart tab renders existing ChartFromSpec unchanged",
         "Table tab renders chart data array as shadcn Table: headers from xAxisKey + metrics keys, rows from data, numeric values locale-formatted, scrollable container",
-        "Tab switching is instant — both views pre-rendered (no lazy load)",
+        "Tab switching is instant \u2014 both views pre-rendered (no lazy load)",
         "Full-screen dialog also includes the Chart/Table tabs",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing Tabs component from src/components/ui/tabs.tsx and Table from src/components/ui/table.tsx. The chart data is in result.spec.data (array of objects). For column headers, use [spec.xAxisKey, ...spec.metrics.map(m => m.key)] for non-pie charts, or [spec.nameKey/xAxisKey, spec.valueKey/metrics[0].key] for pie. Format numbers with Intl.NumberFormat."
     },
     {
@@ -54,8 +54,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "Modify src/app/api/chat/_lib/system-prompt.ts. Add the methodology suppression rules to the 'Output format rules' section. Add methodology to the chart JSON example. Keep all existing sections intact — this is additive. The key behavioral change: AI should produce cleaner, more concise text with rich chart metadata."
+      "passes": true,
+      "notes": "Modify src/app/api/chat/_lib/system-prompt.ts. Add the methodology suppression rules to the 'Output format rules' section. Add methodology to the chart JSON example. Keep all existing sections intact \u2014 this is additive. The key behavioral change: AI should produce cleaner, more concise text with rich chart metadata."
     },
     {
       "id": "US-004",
@@ -71,7 +71,7 @@
         "Verify in browser"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/components/chat/chart-block.tsx. Use Popover from shadcn (may need to add via shadcn CLI if not present: check src/components/ui/popover.tsx). The methodology field is on result.spec.methodology after US-001. Place the button in the same flex row as the Full screen button."
     },
     {
@@ -81,7 +81,7 @@
       "acceptanceCriteria": [
         "DashboardClient (src/components/dashboard/dashboard-client.tsx) chart cards gain shadcn Tabs in the card: Chart (default) | Table",
         "Table view renders chart data array as formatted Table (same approach as US-002: headers from keys, formatted values, scrollable)",
-        "KPI cards are NOT affected — no table view for KPIs",
+        "KPI cards are NOT affected \u2014 no table view for KPIs",
         "Chart grouping sections still render correctly with tabs present",
         "Methodology info button also appears on dashboard chart cards when methodology field exists in ChartSpec",
         "Extract shared ChartDataTable component to src/components/charts/chart-data-table.tsx for reuse between chat and dashboard",
@@ -89,22 +89,22 @@
         "Verify in browser"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "This story should extract the table rendering from US-002 into a shared component. Then both ChartBlock (chat) and DashboardClient (dashboard) import it. The dashboard ChartSpec is from src/lib/dashboard/types.ts which has different shape (xKey/yKeys vs xAxisKey/metrics) — the shared component needs to handle both shapes or normalize to a common format."
+      "passes": true,
+      "notes": "This story should extract the table rendering from US-002 into a shared component. Then both ChartBlock (chat) and DashboardClient (dashboard) import it. The dashboard ChartSpec is from src/lib/dashboard/types.ts which has different shape (xKey/yKeys vs xAxisKey/metrics) \u2014 the shared component needs to handle both shapes or normalize to a common format."
     },
     {
       "id": "US-006",
       "title": "Database schema for custom dashboards and widgets",
       "description": "As a developer, I need DB tables to store user-created dashboards and their widget configurations.",
       "acceptanceCriteria": [
-        "New customDashboards table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK→users notNull), projectId (uuid FK→projects notNull), name (varchar 255 notNull), description (text nullable), status (varchar 50 default 'active' notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
-        "New dashboardWidgets table in schema.ts: id (uuid PK defaultRandom), dashboardId (uuid FK→customDashboards notNull), widgetType (varchar 50 notNull), title (varchar 255 notNull), config (jsonb notNull), sortOrder (integer default 0 notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "New customDashboards table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK\u2192users notNull), projectId (uuid FK\u2192projects notNull), name (varchar 255 notNull), description (text nullable), status (varchar 50 default 'active' notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "New dashboardWidgets table in schema.ts: id (uuid PK defaultRandom), dashboardId (uuid FK\u2192customDashboards notNull), widgetType (varchar 50 notNull), title (varchar 255 notNull), config (jsonb notNull), sortOrder (integer default 0 notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
         "Both tables exported from schema.ts",
         "Run npx drizzle-kit push successfully against Neon",
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing schema patterns (uuid PKs, FK references, timestamps). Place new tables after the uploadedDatasets section. widgetType values: 'chart' or 'kpi'. config stores the full ChartSpec or KPIItem JSON."
     },
     {
@@ -112,32 +112,32 @@
       "title": "Custom dashboards CRUD API",
       "description": "As a user, I need API endpoints to create, list, get, and delete custom dashboards.",
       "acceptanceCriteria": [
-        "POST /api/custom-dashboards — creates dashboard, body { projectId, name, description? }, validates project belongs to user and is active, returns { id, name, description, projectId, status, createdAt }",
-        "GET /api/custom-dashboards?projectId=xxx — returns user's active dashboards, optional projectId filter, each includes widgetCount, ordered by updatedAt desc",
-        "GET /api/custom-dashboards/[id] — returns dashboard with widgets array (ordered by sortOrder asc), validates ownership, 404 if not found or archived",
-        "DELETE /api/custom-dashboards/[id] — sets status to 'archived', returns { success: true }",
+        "POST /api/custom-dashboards \u2014 creates dashboard, body { projectId, name, description? }, validates project belongs to user and is active, returns { id, name, description, projectId, status, createdAt }",
+        "GET /api/custom-dashboards?projectId=xxx \u2014 returns user's active dashboards, optional projectId filter, each includes widgetCount, ordered by updatedAt desc",
+        "GET /api/custom-dashboards/[id] \u2014 returns dashboard with widgets array (ordered by sortOrder asc), validates ownership, 404 if not found or archived",
+        "DELETE /api/custom-dashboards/[id] \u2014 sets status to 'archived', returns { success: true }",
         "All endpoints require auth (401 for unauth, 404 for not found, 400 for bad input)",
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "Create: src/app/api/custom-dashboards/route.ts (GET+POST), src/app/api/custom-dashboards/[id]/route.ts (GET+DELETE). Follow auth pattern: auth() → resolveAppUserId(). widgetCount via subquery or separate count query."
+      "passes": true,
+      "notes": "Create: src/app/api/custom-dashboards/route.ts (GET+POST), src/app/api/custom-dashboards/[id]/route.ts (GET+DELETE). Follow auth pattern: auth() \u2192 resolveAppUserId(). widgetCount via subquery or separate count query."
     },
     {
       "id": "US-008",
       "title": "Dashboard widgets CRUD API",
       "description": "As a user, I need API endpoints to add, update, and remove widgets from a custom dashboard.",
       "acceptanceCriteria": [
-        "POST /api/custom-dashboards/[id]/widgets — adds widget, body { widgetType, title, config, sortOrder? }, validates dashboard ownership, returns widget object with id",
-        "PATCH /api/custom-dashboards/[id]/widgets/[widgetId] — updates widget title/config/sortOrder, validates ownership chain (widget→dashboard→user)",
-        "DELETE /api/custom-dashboards/[id]/widgets/[widgetId] — deletes widget row, validates ownership",
-        "POST /api/custom-dashboards/[id]/widgets/reorder — body { widgetIds: string[] }, updates sortOrder for each widget to match array index, validates all widgetIds belong to dashboard",
+        "POST /api/custom-dashboards/[id]/widgets \u2014 adds widget, body { widgetType, title, config, sortOrder? }, validates dashboard ownership, returns widget object with id",
+        "PATCH /api/custom-dashboards/[id]/widgets/[widgetId] \u2014 updates widget title/config/sortOrder, validates ownership chain (widget\u2192dashboard\u2192user)",
+        "DELETE /api/custom-dashboards/[id]/widgets/[widgetId] \u2014 deletes widget row, validates ownership",
+        "POST /api/custom-dashboards/[id]/widgets/reorder \u2014 body { widgetIds: string[] }, updates sortOrder for each widget to match array index, validates all widgetIds belong to dashboard",
         "All endpoints: 401 unauth, 404 not found, 400 bad input",
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "Create: src/app/api/custom-dashboards/[id]/widgets/route.ts (GET implicit via parent, POST+reorder), src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts (PATCH+DELETE). Config is opaque JSONB — store whatever the AI produces."
+      "passes": true,
+      "notes": "Create: src/app/api/custom-dashboards/[id]/widgets/route.ts (GET implicit via parent, POST+reorder), src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts (PATCH+DELETE). Config is opaque JSONB \u2014 store whatever the AI produces."
     },
     {
       "id": "US-009",
@@ -156,7 +156,7 @@
         "Verify in browser"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "The current /projects/[id]/page.tsx renders an AI-generated project-controls dashboard. Add the custom dashboards section below it as a separate client component. Fetch dashboards client-side via useEffect + fetch."
     },
     {
@@ -166,7 +166,7 @@
       "acceptanceCriteria": [
         "New page: src/app/(dashboard)/projects/[id]/dashboards/[dashboardId]/page.tsx",
         "Server component fetches dashboard + widgets via GET /api/custom-dashboards/[dashboardId]",
-        "Renders header: dashboard name, breadcrumb (Projects → Project Name → Dashboard Name), action buttons",
+        "Renders header: dashboard name, breadcrumb (Projects \u2192 Project Name \u2192 Dashboard Name), action buttons",
         "KPI widgets (widgetType='kpi') render as styled cards (same DynamicKPICard style)",
         "Chart widgets (widgetType='chart') render as cards with DynamicChart + Chart/Table tabs",
         "Widgets ordered by sortOrder in responsive grid: 2-col desktop, 1-col mobile",
@@ -176,7 +176,7 @@
         "Verify in browser"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "The dashboard canvas is a client component that receives server-fetched initial data. Widget rendering reuses DynamicChart from src/components/charts/dynamic-chart.tsx for chart type and the KPI card pattern from dashboard-client.tsx. The chart/table tabs pattern from US-005 should be reusable here."
     },
     {
@@ -196,8 +196,8 @@
         "Verify in browser"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": "Create: src/app/api/custom-dashboards/[id]/chat/route.ts for the streaming chat endpoint. Reuse createDataTools from src/app/api/chat/_lib/data-tools.ts with the dashboard's projectId. The Sheet component is at src/components/ui/sheet.tsx. The builder prompt should be simpler than the main chat prompt — focus on generating individual widgets."
+      "passes": true,
+      "notes": "Create: src/app/api/custom-dashboards/[id]/chat/route.ts for the streaming chat endpoint. Reuse createDataTools from src/app/api/chat/_lib/data-tools.ts with the dashboard's projectId. The Sheet component is at src/components/ui/sheet.tsx. The builder prompt should be simpler than the main chat prompt \u2014 focus on generating individual widgets."
     },
     {
       "id": "US-012",
@@ -208,17 +208,17 @@
         "Clicking the button calls POST /api/custom-dashboards/[id]/widgets with: widgetType ('chart' or 'kpi'), title (from chart title or kpi label), config (full parsed spec JSON)",
         "After successful add, widget appears in the main dashboard grid (refetch or optimistic insert)",
         "Button shows loading spinner during API call, success checkmark briefly after",
-        "Button disabled after widget is added (prevents duplicate adds) — shows 'Added ✓'",
+        "Button disabled after widget is added (prevents duplicate adds) \u2014 shows 'Added \u2713'",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "This requires a modified MessageRenderer (or wrapper) for the dashboard chat that adds the 'Add to Dashboard' button on chart/kpi blocks. Use a callback prop pattern: the dashboard page passes an onAddWidget callback to the chat panel, which passes it to the renderer. The renderer calls it with the parsed spec when user clicks Add."
     },
     {
       "id": "US-013",
-      "title": "Dashboard refresh — regenerate widgets with latest data",
+      "title": "Dashboard refresh \u2014 regenerate widgets with latest data",
       "description": "As a user, I want to click Refresh to update all dashboard widgets with the latest uploaded data.",
       "acceptanceCriteria": [
         "Refresh button in dashboard header triggers POST /api/custom-dashboards/[id]/refresh",
@@ -232,7 +232,7 @@
         "Verify in browser"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Create src/app/api/custom-dashboards/[id]/refresh/route.ts. Process widgets sequentially or in parallel (Promise.allSettled). Each widget gets a mini-prompt: system prompt for single chart generation + user prompt with title and dataset context. Parse LLM response and update config JSONB. Return { refreshed: number, failed: number }."
     },
     {
@@ -245,13 +245,13 @@
         "Each card shows: dashboard name, project name (fetched/joined), widget count, last updated date",
         "Cards link to /projects/[projectId]/dashboards/[dashboardId]",
         "Empty state with 'Create your first dashboard from a Project page' message",
-        "Breadcrumbs on dashboard canvas page: Projects → [Project Name] → [Dashboard Name]",
+        "Breadcrumbs on dashboard canvas page: Projects \u2192 [Project Name] \u2192 [Dashboard Name]",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": "Modify src/components/layout/sidebar.tsx to add the nav item. Create src/app/(dashboard)/dashboards/page.tsx. The list endpoint GET /api/custom-dashboards (no projectId filter) returns all dashboards — need to join project name. Add Breadcrumb component if not present, or use simple link chain."
+      "passes": true,
+      "notes": "Modify src/components/layout/sidebar.tsx to add the nav item. Create src/app/(dashboard)/dashboards/page.tsx. The list endpoint GET /api/custom-dashboards (no projectId filter) returns all dashboards \u2014 need to join project name. Add Breadcrumb component if not present, or use simple link chain."
     }
   ]
 }
