@@ -9,6 +9,14 @@ import { ChatThread } from "@/components/chat/page/chat-thread";
 import { useConversationManager } from "@/components/chat/page/use-conversation-manager";
 import { SUGGESTION_PROMPTS } from "@/lib/chat/history";
 
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  listDatasets: "Scanning datasets...",
+  getDatasetSchema: "Reading schema...",
+  queryDatasetRows: "Querying data...",
+  searchDatasets: "Searching datasets...",
+  aggregateColumn: "Calculating aggregates...",
+};
+
 export default function ChatPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading, append, error, reload, setMessages } =
     useChatRuntime();
@@ -30,6 +38,20 @@ export default function ChatPage() {
     isLoading && messages.at(-1)?.role === "assistant"
       ? messages.filter((message) => message.id !== messages.at(-1)?.id)
       : messages;
+
+  const lastAssistantMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "assistant") as
+    | ({
+        toolInvocations?: Array<{ toolName: string; state: "call" | "partial-call" | "result" }>;
+      } & (typeof messages)[number])
+    | undefined;
+  const activeTool = lastAssistantMessage?.toolInvocations?.find(
+    (tool) => tool.state === "call" || tool.state === "partial-call",
+  );
+  const loadingLabel = activeTool
+    ? TOOL_STATUS_LABELS[activeTool.toolName] ?? "Working..."
+    : "Generating...";
 
   return (
     <section className="h-[calc(100vh-9.5rem)] min-h-[560px]">
@@ -74,6 +96,7 @@ export default function ChatPage() {
               error={error ?? undefined}
               onRetry={() => void reload()}
               suggestions={SUGGESTION_PROMPTS}
+              loadingLabel={loadingLabel}
               onSuggestionClick={(suggestion) => void append({ role: "user", content: suggestion })}
             />
             <div ref={messagesEndRef} />

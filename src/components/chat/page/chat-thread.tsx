@@ -14,6 +14,7 @@ interface ChatThreadProps {
   error: Error | undefined;
   onRetry: () => void;
   suggestions: readonly string[];
+  loadingLabel?: string;
   onSuggestionClick: (suggestion: string) => void;
 }
 
@@ -23,6 +24,7 @@ export function ChatThread({
   error,
   onRetry,
   suggestions,
+  loadingLabel = "Generating...",
   onSuggestionClick,
 }: ChatThreadProps) {
   if (messages.length === 0) {
@@ -80,7 +82,7 @@ export function ChatThread({
               <p className="text-xs font-medium text-muted-foreground">Konstruq AI</p>
               <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm text-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500" />
-                <span className="text-xs text-muted-foreground">Generating...</span>
+                <span className="text-xs text-muted-foreground">{loadingLabel}</span>
               </div>
             </div>
           </div>
