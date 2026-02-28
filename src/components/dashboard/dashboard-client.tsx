@@ -31,10 +31,13 @@ import {
 } from "@/lib/dashboard/types";
 import { cn } from "@/lib/utils";
 
+type DashboardVariant = "executive" | "project-controls" | "financials";
+
 interface DashboardClientProps {
   datasetIds: string[];
   firstName?: string | null;
   projectId?: string;
+  variant?: DashboardVariant;
 }
 
 interface ApiErrorPayload {
@@ -91,9 +94,9 @@ function readCache(): DashboardCache | null {
   return parseDashboardCache(window.localStorage.getItem(DASHBOARD_STORAGE_KEY));
 }
 
-function writeCache(data: DashboardResponse) {
+function writeCache(data: DashboardResponse, cacheKey: string) {
   const cache: DashboardCache = {
-    cacheKey: buildDashboardCacheKey(data.datasetIds),
+    cacheKey,
     kpis: data.kpis,
     charts: data.charts,
   };
@@ -108,8 +111,9 @@ function clearCache() {
 async function requestDashboard(
   cacheKey: string,
   projectId?: string,
+  variant?: DashboardVariant,
 ): Promise<DashboardResponse> {
-  const requestKey = `${cacheKey}:${projectId ?? ""}`;
+  const requestKey = `${cacheKey}:${projectId ?? ""}:${variant ?? ""}`;
 
   if (inFlightRequest && inFlightRequestKey === requestKey) {
     return inFlightRequest;
@@ -118,7 +122,10 @@ async function requestDashboard(
   const request = fetch("/api/dashboard/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(projectId ? { projectId } : {}),
+    body: JSON.stringify({
+      ...(projectId ? { projectId } : {}),
+      ...(variant ? { variant } : {}),
+    }),
     cache: "no-store",
   }).then(async (response) => {
     const payload = (await response.json().catch(() => null)) as
@@ -263,8 +270,13 @@ export function DashboardClient({
   datasetIds,
   firstName,
   projectId,
+  variant,
 }: DashboardClientProps) {
-  const cacheKey = buildDashboardCacheKey(datasetIds);
+  const cacheKey = [
+    buildDashboardCacheKey(datasetIds),
+    projectId ?? "",
+    variant ?? "executive",
+  ].join(":");
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -294,13 +306,13 @@ export function DashboardClient({
     setMessage("");
 
     try {
-      const nextDashboard = await requestDashboard(cacheKey, projectId);
+      const nextDashboard = await requestDashboard(cacheKey, projectId, variant);
 
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      writeCache(nextDashboard);
+      writeCache(nextDashboard, cacheKey);
       setDashboard(nextDashboard);
       setStatus("ready");
     } catch (error) {
@@ -315,7 +327,7 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, projectId, refreshKey]);
+  }, [cacheKey, projectId, refreshKey, variant]);
 
   function handleRefresh() {
     clearCache();
