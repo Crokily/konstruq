@@ -75,8 +75,8 @@ function EVMTooltip({
   };
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 shadow-xl backdrop-blur">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-xl backdrop-blur">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       {payload.map((entry) => {
@@ -85,8 +85,8 @@ function EVMTooltip({
         return (
           <div key={key} className="flex items-center gap-2 text-sm">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-            <span className="text-slate-300">{labelByKey[key] ?? key}</span>
-            <span className="ml-auto font-medium text-slate-100">
+            <span className="text-muted-foreground">{labelByKey[key] ?? key}</span>
+            <span className="ml-auto font-medium text-popover-foreground">
               {tooltipCurrencyFormatter.format(entry.value ?? 0)}
             </span>
           </div>
@@ -103,10 +103,10 @@ export function EVMChart({ data }: EVMChartProps) {
   }));
 
   return (
-    <div className="h-[350px] min-h-[350px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-slate-400 [&_.recharts-cartesian-grid_line]:stroke-slate-800">
+    <div className="h-[350px] min-h-[350px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 8, right: 12, left: 8, bottom: 12 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.35} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.55} />
           <XAxis dataKey="monthLabel" tickLine={false} axisLine={false} />
           <YAxis
             tickLine={false}

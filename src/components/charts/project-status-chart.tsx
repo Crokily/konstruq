@@ -19,6 +19,7 @@ const STATUSES: ProjectStatus[] = [
 
 interface ProjectStatusChartProps {
   projects: UnifiedProject[];
+  onSliceClick?: (slice: { name: ProjectStatus; value: number }) => void;
 }
 
 interface StatusSlice {
@@ -27,7 +28,7 @@ interface StatusSlice {
   color: string;
 }
 
-export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
+export function ProjectStatusChart({ projects, onSliceClick }: ProjectStatusChartProps) {
   const statusCounts = projects.reduce<Record<ProjectStatus, number>>(
     (acc, project) => {
       acc[project.status] += 1;
@@ -61,7 +62,12 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
             stroke="none"
           >
             {data.map((entry) => (
-              <Cell key={entry.name} fill={entry.color} />
+              <Cell
+                key={entry.name}
+                fill={entry.color}
+                className="cursor-pointer"
+                onClick={() => onSliceClick?.({ name: entry.name, value: entry.value })}
+              />
             ))}
           </Pie>
           <Tooltip

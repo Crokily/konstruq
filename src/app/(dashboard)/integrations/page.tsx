@@ -23,22 +23,7 @@ import { db } from "@/lib/db";
 import { dataConnections, users } from "@/lib/db/schema";
 
 import { ProcoreSyncButton } from "./procore-sync-button";
-
-const procoreIntegration = {
-  features: ["Projects", "Budgets", "RFIs", "Change Orders", "Schedules"],
-};
-
-const sageIntacctIntegration = {
-  features: [
-    "General Ledger",
-    "Accounts Payable",
-    "Accounts Receivable",
-    "Cost Types",
-    "Project Contracts",
-  ],
-};
-
-const PROCORE_PROVIDER = "procore";
+import { PROCORE_PROVIDER, procoreIntegration, sageIntacctIntegration } from "./constants";
 
 function formatLastSync(value: Date | string | null): string | null {
   if (!value) {
@@ -191,10 +176,14 @@ export default async function IntegrationsPage() {
               ))}
             </ul>
             <Button
-              disabled
-              className="w-full bg-muted text-muted-foreground hover:bg-muted"
+              asChild
+              variant="outline"
+              className="w-full border-sky-500/30 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 dark:text-sky-200"
             >
-              Coming Soon
+              <Link href="mailto:support@konstruq.com?subject=Sage%20Intacct%20Early%20Access">
+                Request Early Access
+                <ExternalLink className="h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>

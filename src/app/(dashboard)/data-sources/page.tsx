@@ -11,14 +11,20 @@ import {
   type DatasetSheet,
 } from "./data-sources-client";
 
-function normalizeCategory(value: string): DatasetCategory | null {
+const DEFAULT_DATASET_CATEGORY: DatasetCategory = "uploaded";
+
+function normalizeCategory(value: string): DatasetCategory {
   const normalized = value.trim().toLowerCase();
 
-  if (normalized === "pm" || normalized === "erp") {
+  if (
+    normalized === "pm" ||
+    normalized === "erp" ||
+    normalized === DEFAULT_DATASET_CATEGORY
+  ) {
     return normalized;
   }
 
-  return null;
+  return DEFAULT_DATASET_CATEGORY;
 }
 
 function normalizeSheets(value: unknown): DatasetSheet[] {
@@ -99,23 +105,16 @@ export default async function DataSourcesPage() {
         .where(eq(uploadedDatasets.userId, appUser.id));
 
       initialDatasets = sortDatasets(
-        datasets.flatMap((dataset) => {
-          const category = normalizeCategory(dataset.category);
-
-          if (!category) {
-            return [];
-          }
-
-          return [
-            {
+        datasets.map(
+          (dataset) =>
+            ({
               id: dataset.id,
-              category,
+              category: normalizeCategory(dataset.category),
               fileName: dataset.fileName,
               sheets: normalizeSheets(dataset.sheets),
               uploadedAt: toIsoDate(dataset.uploadedAt),
-            } satisfies DatasetItem,
-          ];
-        }),
+            }) satisfies DatasetItem,
+        ),
       );
     }
   }

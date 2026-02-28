@@ -44,8 +44,8 @@ function DataSourceBadge({ source }: { source: "Procore" | "Sage Intacct" }) {
       className={cn(
         "rounded-md px-2 py-0.5 text-[11px] uppercase tracking-wide",
         isProcore
-          ? "border-amber-400/30 bg-amber-500/15 text-amber-300"
-          : "border-emerald-400/30 bg-emerald-500/15 text-emerald-300"
+          ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
       )}
     >
       {source}
@@ -70,8 +70,8 @@ export default async function ProjectDetailPage({
 
   if (!project || !financials || !costBreakdown) {
     return (
-      <Card className="border-slate-800 bg-slate-900/50">
-        <CardContent className="py-12 text-center text-slate-300">
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="py-12 text-center text-muted-foreground">
           Project not found
         </CardContent>
       </Card>
@@ -82,12 +82,12 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="space-y-6">
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border/70 bg-card/90 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-xl text-slate-100">{project.name}</CardTitle>
-              <CardDescription className="mt-1 text-slate-400">
+              <CardTitle className="text-xl text-foreground">{project.name}</CardTitle>
+              <CardDescription className="mt-1 text-muted-foreground">
                 {project.type} project in {project.city}, {project.state}
               </CardDescription>
             </div>
@@ -97,58 +97,58 @@ export default async function ProjectDetailPage({
         <CardContent className="space-y-5">
           <div className="grid grid-cols-4 gap-4 text-sm max-xl:grid-cols-2 max-sm:grid-cols-1">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Project Type</p>
-              <p className="mt-1 text-slate-100">{project.type}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Project Type</p>
+              <p className="mt-1 text-foreground">{project.type}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Location</p>
-              <p className="mt-1 text-slate-100">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Location</p>
+              <p className="mt-1 text-foreground">
                 {project.city}, {project.state}
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Start Date</p>
-              <p className="mt-1 text-slate-100">{formatDate(project.startDate)}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Start Date</p>
+              <p className="mt-1 text-foreground">{formatDate(project.startDate)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Completion Date</p>
-              <p className="mt-1 text-slate-100">{formatDate(project.completionDate)}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Completion Date</p>
+              <p className="mt-1 text-foreground">{formatDate(project.completionDate)}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm max-md:grid-cols-1">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Total Value</p>
-              <p className="mt-1 text-lg font-semibold text-slate-100">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Value</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
                 {currencyFormatter.format(project.totalValue)}
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Revised Contract Value
               </p>
-              <p className="mt-1 text-lg font-semibold text-slate-100">
+              <p className="mt-1 text-lg font-semibold text-foreground">
                 {currencyFormatter.format(financials.revisedContractAmount)}
               </p>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Percent Complete</span>
-              <span className="font-medium text-slate-100">{progress}%</span>
+              <span className="text-muted-foreground">Percent Complete</span>
+              <span className="font-medium text-foreground">{progress}%</span>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-slate-800">
+            <div className="h-2.5 w-full rounded-full bg-muted">
               <div className="h-2.5 rounded-full bg-amber-500" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border/70 bg-card/90 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-slate-100">EVM KPI Summary</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-foreground">EVM KPI Summary</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Calculated from the latest monthly EVM data point
               </CardDescription>
             </div>
@@ -164,12 +164,12 @@ export default async function ProjectDetailPage({
       </Card>
 
       <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <CardTitle className="text-slate-100">Cost Breakdown</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-foreground">Cost Breakdown</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Budget vs actual vs committed by category
                 </CardDescription>
               </div>
@@ -181,12 +181,12 @@ export default async function ProjectDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <CardTitle className="text-slate-100">EVM Trend</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-foreground">EVM Trend</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Planned value, earned value, and actual cost over 2025
                 </CardDescription>
               </div>

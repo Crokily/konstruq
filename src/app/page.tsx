@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+export const metadata: Metadata = {
+  title: "Construction Analytics Platform",
+  description:
+    "Unify Procore project data and Sage Intacct financials into one construction analytics dashboard.",
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default async function LandingPage() {
   const { userId } = await auth();
   if (userId) {
@@ -17,9 +27,13 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="relative min-h-screen bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.12),transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.2),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.45),transparent_25%)] dark:bg-[linear-gradient(to_bottom,rgba(2,6,23,0.25),transparent_25%)]" />
+      </div>
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-slate-800/50">
+      <header className="relative flex items-center justify-between border-b border-border bg-background/80 px-8 py-5 backdrop-blur">
         <div className="flex items-center gap-2">
           <Building2 className="h-7 w-7 text-amber-500" />
           <span className="text-xl font-bold tracking-tight">Konstruq</span>
@@ -43,7 +57,7 @@ export default async function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex flex-col items-center justify-center px-8 py-24 text-center">
+      <main className="relative flex flex-col items-center justify-center px-8 py-24 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm mb-8">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -58,7 +72,7 @@ export default async function LandingPage() {
           <span className="text-amber-500">One dashboard.</span>
         </h1>
 
-        <p className="mt-6 text-lg md:text-xl text-slate-400 max-w-2xl">
+        <p className="mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
           Unify Procore project data and Sage Intacct financials into a single,
           powerful analytics dashboard. No more PowerBI. No more spreadsheets.
         </p>
@@ -107,10 +121,10 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-left hover:border-slate-700 transition-colors">
+    <div className="rounded-xl border border-border bg-card/80 p-6 text-left shadow-sm transition-colors hover:border-amber-500/30">
       <div className="mb-4">{icon}</div>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+      <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
     </div>
   );
 }
