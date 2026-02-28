@@ -1,0 +1,211 @@
+🔥 Dashboard #1 — Executive Construction Performance Dashboard
+
+Purpose: Provide high-level visibility across projects, risk, schedule, resources, labor performance, and subcontractor delivery metrics.
+
+🧠 Tabs & Suggested Charts
+1️⃣ Project Risk & Task Performance
+
+Data Sources: Schedule, tasks, delays, risk register
+
+Charts + Notes
+
+RAG Status Summary (traffic light for tasks behind/on/ahead)
+
+Task Completion % by Project (bar chart)
+
+Risk Heatmap (risk severity vs likelihood)
+
+Overdue Tasks Trend (line over time)
+📌 Notes: Commentary on top 3 risks and mitigation actions.
+(Examples of risk & task visuals commonly used in construction monitoring dashboards)
+
+2️⃣ Schedule Overview
+
+Data Sources: Baseline vs actual schedule
+
+Charts + Notes
+
+Schedule Variance Chart (SV) (bar showing variance by project)
+
+SPI Trend (line chart)
+
+Gantt Summary Snapshot (milestone vs actual)
+
+Critical Path Delay Histogram
+📌 Notes: Highlight most delayed milestones and expected finish impact.
+(Schedule adherence is a common KPI in project dashboards)
+
+3️⃣ Resource & Crew Performance
+
+Data Sources: Labor hours, productivity, allocation
+
+Charts + Notes
+
+Resource Utilisation Heatmap (crew x hours)
+
+Productivity Trend (units / hr)
+
+Crew Cost vs Budget (stacked bar)
+
+Idle Time Distribution
+📌 Notes: Commentary on peak workload periods and resource bottlenecks.
+(Labour and equipment workloads are critical for onsite performance monitoring)
+
+4️⃣ Subcontractor Performance
+
+Data Sources: Supplier/contractor deliveries, quality metrics
+
+Charts + Notes
+
+Subcontractor On-Time Delivery %
+
+Contractor Quality Scorecard
+
+Variation vs Approved Value
+
+Payment vs Schedule Adherence
+📌 Notes: Top 3 subcontractors to watch and quality trends.
+
+📊 Dashboard #2 — Project Controls Dashboard
+
+Purpose: Focus on detailed project scheduling and site planning (master schedule, lookahead, delays, dependencies, usage).
+
+🧠 Tabs & Suggested Charts
+1️⃣ Master Schedule Tracking
+
+Data Sources: Project schedules
+
+Charts + Notes
+
+Baseline vs Actual Gantt Summary
+
+Cumulative Schedule Variance
+
+Days Behind Target Histogram
+
+Next Milestone Status
+📌 Notes: Summary of critical delays and root causes.
+
+2️⃣ Lookahead Planning
+
+Data Sources: Short-term work plans
+
+Charts + Notes
+
+7–14 Day Lookahead Calendar
+
+Task Readiness Score
+
+Dependency Blocking Matrix
+
+Upcoming Workload Distribution
+📌 Notes: Highlight blocked tasks and risk impacts.
+
+3️⃣ Dependencies & Delay Analysis
+
+Data Sources: Task links
+
+Charts + Notes
+
+Dependency Network (Sankey/Network Visual)
+
+Delay Cause Categories (pie chart)
+
+Delay Impact on Critical Path
+
+Cumulative Delay Trend
+📌 Notes: Call out root causes of cascading delays.
+(SmartPM dashboards focus on schedule KPI and delay analysis)
+
+4️⃣ Equipment Utilisation
+
+Data Sources: Equipment logs, hours
+
+Charts + Notes
+
+Equipment Time Allocation
+
+Utilisation % Trend
+
+Downtime Reasons
+
+Cost per Utilised Hour
+📌 Notes: Recommendations for idle time reduction.
+
+💰 Dashboard #3 — Financial & Controls Analytics Dashboard
+
+Purpose: Track cost performance, cash flows, earned value, claims, and cost detail analytics.
+
+🧠 Tabs & Suggested Charts
+1️⃣ Budget Control
+
+Data Sources: Budget, actual, commitments
+
+Charts + Notes
+
+Budget vs Actual vs Forecast (stacked)
+
+Cost Variance Trend
+
+Top Variance Cost Codes
+
+Committed vs Spent %
+📌 Notes: High-risk cost areas and forecast sensitivity.
+
+2️⃣ Earned Value Management
+
+Data Sources: Plan, earned work, actual costs
+
+Charts + Notes
+
+EVM S-Curve (PV, EV, AC)
+
+CPI / SPI Trend
+
+EAC Forecast Bands
+
+To Complete Performance Index
+📌 Notes: Explain performance against baseline and forecast risk.
+(EVM is a foundational construction performance method)
+
+3️⃣ Cash Flow & Claims
+
+Data Sources: Invoices, progress claims, payments
+
+Charts + Notes
+
+Cashflow Forecast vs Actual
+
+Outstanding Payments Aging
+
+Claims Certified vs Paid
+
+Retention vs Release Trends
+📌 Notes: Impacts on working capital and payment cycle.
+
+4️⃣ Cost Detail & Drills
+
+Data Sources: Cost codes, budgets
+
+Charts + Notes
+
+Cost Breakdown by Cost Code
+
+Budget Utilisation by Phase
+
+Change Order Impact
+
+Unit Cost Trends
+📌 Notes: Provide commentary on trending cost drivers.
+
+📊 Visual Elements Across Dashboards
+
+Typical chart selections from professional dashboards include:
+✔ Line charts for trends (CPI, SPI, productivity)
+✔ Gantt / timeline for schedule visuals
+✔ Heatmaps for utilisation and risk
+✔ Sankey / network for dependencies
+✔ Waterfall for budget changes
+✔ Bar/pie for cost comparisons and breakdowns
+
+These chart types align with real construction dashboards that unify project, schedule, budget, resource, and quality metrics into a single view.
