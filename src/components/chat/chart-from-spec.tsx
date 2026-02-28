@@ -95,9 +95,9 @@ function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 shadow-xl backdrop-blur">
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-xl">
       {label !== undefined && label !== null ? (
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
       ) : null}
       {payload.map((entry, index) => {
         const labelText =
@@ -109,8 +109,8 @@ function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
         return (
           <div key={`${labelText}-${index}`} className="flex items-center gap-2 text-sm">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-slate-300">{labelText}</span>
-            <span className="ml-auto font-medium text-slate-100">{formatTooltipValue(entry.value)}</span>
+            <span className="text-muted-foreground">{labelText}</span>
+            <span className="ml-auto font-medium text-popover-foreground">{formatTooltipValue(entry.value)}</span>
           </div>
         );
       })}
@@ -120,7 +120,7 @@ function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
 
 function EmptyChartState({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-4 text-sm text-slate-400">
+    <div className="rounded-lg border border-border bg-muted/40 px-3 py-4 text-sm text-muted-foreground">
       {message}
     </div>
   );
@@ -173,7 +173,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
   if (metrics.length === 0) {
     return (
       <div className="w-full space-y-3">
-        <h4 className="text-sm font-medium text-slate-200">{title}</h4>
+        <h4 className="text-sm font-medium text-foreground">{title}</h4>
         <EmptyChartState message="No metrics provided for this chart." />
       </div>
     );
@@ -182,7 +182,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
   if (data.length === 0) {
     return (
       <div className="w-full space-y-3">
-        <h4 className="text-sm font-medium text-slate-200">{title}</h4>
+        <h4 className="text-sm font-medium text-foreground">{title}</h4>
         <EmptyChartState message="No data available for this chart." />
       </div>
     );
@@ -190,12 +190,12 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
 
   return (
     <div className="w-full space-y-3">
-      <h4 className="text-sm font-medium text-slate-200">{title}</h4>
-      <div className="w-full [&_.recharts-cartesian-axis-tick-value]:fill-slate-400">
+      <h4 className="text-sm font-medium text-foreground">{title}</h4>
+      <div className="w-full [&_.recharts-cartesian-axis-tick-value]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border">
         <ResponsiveContainer width="100%" height={300}>
           {chartType === "line" ? (
             <LineChart data={data} margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltip />} />
@@ -215,7 +215,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
             </LineChart>
           ) : chartType === "area" ? (
             <AreaChart data={data} margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltip />} />
@@ -255,7 +255,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
             </PieChart>
           ) : chartType === "scatter" ? (
             <ScatterChart margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis type="number" dataKey="x" tickLine={false} axisLine={false} />
               <YAxis type="number" dataKey="y" tickLine={false} axisLine={false} />
               <Tooltip cursor={{ stroke: "rgba(148, 163, 184, 0.45)", strokeDasharray: "3 3" }} content={<ChartTooltip />} />
@@ -270,7 +270,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
             </ScatterChart>
           ) : chartType === "stacked-bar" ? (
             <BarChart data={data} margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltip />} />
@@ -288,7 +288,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
             </BarChart>
           ) : chartType === "composed" ? (
             <ComposedChart data={data} margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltip />} />
@@ -317,7 +317,7 @@ export function ChartFromSpec({ spec }: ChartFromSpecProps) {
             </ComposedChart>
           ) : (
             <BarChart data={data} margin={CHART_MARGIN}>
-              <CartesianGrid stroke="#334155" opacity={0.35} strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" opacity={0.8} strokeDasharray="3 3" />
               <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltip />} />

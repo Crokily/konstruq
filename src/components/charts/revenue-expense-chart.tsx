@@ -45,8 +45,8 @@ function RevenueExpenseTooltip({
   }
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 shadow-xl backdrop-blur">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-xl">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       {payload.map((entry) => {
@@ -57,10 +57,10 @@ function RevenueExpenseTooltip({
             <span
               className={`h-2.5 w-2.5 rounded-full ${isRevenue ? "bg-emerald-500" : "bg-rose-500"}`}
             />
-            <span className="text-slate-300">
+            <span className="text-muted-foreground">
               {isRevenue ? "Revenue" : "Expenses"}
             </span>
-            <span className="ml-auto font-medium text-slate-100">
+            <span className="ml-auto font-medium text-popover-foreground">
               {currencyFormatter.format(entry.value ?? 0)}
             </span>
           </div>
@@ -81,7 +81,7 @@ export function RevenueExpenseChart({ data }: RevenueExpenseChartProps) {
   }));
 
   return (
-    <div className="h-[300px] min-h-[300px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-slate-400 [&_.recharts-cartesian-grid_line]:stroke-slate-800">
+    <div className="h-[300px] min-h-[300px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <defs>
@@ -95,7 +95,7 @@ export function RevenueExpenseChart({ data }: RevenueExpenseChartProps) {
             </linearGradient>
           </defs>
 
-          <CartesianGrid stroke="#334155" strokeDasharray="3 3" opacity={0.35} />
+          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" opacity={0.8} />
           <XAxis
             dataKey="monthLabel"
             tickLine={false}

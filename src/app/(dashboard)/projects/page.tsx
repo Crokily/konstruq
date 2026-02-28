@@ -20,15 +20,15 @@ export default async function ProjectsPage() {
     <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Projects</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="mt-1 text-muted-foreground">
           All construction projects from Procore.
         </p>
       </div>
 
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-slate-100">Project Health Matrix</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle>Project Health Matrix</CardTitle>
+          <CardDescription>
             Schedule completion compared to budget burn
           </CardDescription>
         </CardHeader>
@@ -37,10 +37,10 @@ export default async function ProjectsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-0">
-          <CardTitle className="text-slate-100">Project List</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle>Project List</CardTitle>
+          <CardDescription>
             Click a row to open project details
           </CardDescription>
         </CardHeader>

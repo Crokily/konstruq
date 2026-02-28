@@ -290,23 +290,23 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
   return (
     <div className="space-y-6">
       {(Object.keys(sectionContent) as DatasetCategory[]).map((category) => (
-        <Card key={category} className="border-slate-800 bg-slate-900/50">
+        <Card key={category} className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-slate-100">
+            <CardTitle>
               {sectionContent[category].title}
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription>
               {sectionContent[category].description}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4 transition-colors hover:border-slate-600">
+            <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 transition-colors hover:border-muted-foreground/40">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-100">
+                  <p className="text-sm font-medium text-foreground">
                     Upload CSV or Excel files
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Accepted formats: .csv, .xlsx, .xls
                   </p>
                 </div>
@@ -314,7 +314,7 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
                   type="button"
                   onClick={() => openFilePicker(category)}
                   disabled={uploading[category]}
-                  className="bg-amber-500 text-slate-950 hover:bg-amber-400"
+                  className="bg-amber-500 text-amber-950 hover:bg-amber-400"
                 >
                   {uploading[category] ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -347,7 +347,7 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
 
             <div className="space-y-3">
               {datasetsByCategory[category].length === 0 ? (
-                <p className="rounded-lg bg-slate-800/50 p-4 text-sm text-slate-400">
+                <p className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
                   {sectionContent[category].emptyMessage}
                 </p>
               ) : (
@@ -357,16 +357,16 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
                   return (
                     <div
                       key={dataset.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-800/50 p-4"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-4"
                     >
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
                           <FileSpreadsheet className="h-4 w-4 text-amber-500" />
-                          <p className="truncate text-sm font-medium text-slate-100">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {dataset.fileName}
                           </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span>{dataset.sheets.length} sheets</span>
                           <span>{totalRows(dataset.sheets).toLocaleString()} rows</span>
                           <span>Uploaded {formatUploadedAt(dataset.uploadedAt)}</span>

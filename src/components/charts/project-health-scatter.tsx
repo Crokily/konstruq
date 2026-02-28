@@ -70,23 +70,23 @@ function ProjectHealthTooltip({
   }
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 shadow-xl backdrop-blur">
-      <p className="mb-2 text-sm font-semibold text-slate-100">{point.name}</p>
-      <div className="space-y-1 text-xs text-slate-300">
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-xl">
+      <p className="mb-2 text-sm font-semibold text-popover-foreground">{point.name}</p>
+      <div className="space-y-1 text-xs text-muted-foreground">
         <p>
-          Schedule: <span className="font-medium text-slate-100">{point.schedulePercent}%</span>
+          Schedule: <span className="font-medium text-popover-foreground">{point.schedulePercent}%</span>
         </p>
         <p>
-          Budget: <span className="font-medium text-slate-100">{point.budgetPercent}%</span>
+          Budget: <span className="font-medium text-popover-foreground">{point.budgetPercent}%</span>
         </p>
         <p>
           Contract Value:{" "}
-          <span className="font-medium text-slate-100">
+          <span className="font-medium text-popover-foreground">
             {contractValueFormatter.format(point.contractValue)}
           </span>
         </p>
         <p>
-          Health: <span className="font-medium text-slate-100">{point.healthLabel}</span>
+          Health: <span className="font-medium text-popover-foreground">{point.healthLabel}</span>
         </p>
       </div>
     </div>
@@ -113,10 +113,10 @@ export function ProjectHealthScatter({ matrix, projects }: ProjectHealthScatterP
   });
 
   return (
-    <div className="h-[350px] min-h-[350px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-slate-400 [&_.recharts-cartesian-grid_line]:stroke-slate-800">
+    <div className="h-[350px] min-h-[350px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border">
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 12, right: 12, bottom: 12, left: 12 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.35} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.8} />
           <XAxis
             type="number"
             dataKey="schedulePercent"
@@ -144,10 +144,10 @@ export function ProjectHealthScatter({ matrix, projects }: ProjectHealthScatterP
               { x: 0, y: 0 },
               { x: 100, y: 100 },
             ]}
-            stroke="#94a3b8"
+            stroke="var(--muted-foreground)"
             strokeDasharray="5 5"
           />
-          <Tooltip content={<ProjectHealthTooltip />} cursor={{ stroke: "#64748b" }} />
+          <Tooltip content={<ProjectHealthTooltip />} cursor={{ stroke: "var(--muted-foreground)" }} />
           <Scatter data={chartData}>
             {chartData.map((entry) => (
               <Cell key={entry.id} fill={entry.color} />

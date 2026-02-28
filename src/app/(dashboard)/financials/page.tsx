@@ -40,16 +40,16 @@ export default async function FinancialsPage() {
     <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Financial Overview</h1>
-        <p className="mt-1 text-slate-400">
+        <p className="mt-1 text-muted-foreground">
           Portfolio financial health from Sage Intacct
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-slate-100">Cash Flow Forecast</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle>Cash Flow Forecast</CardTitle>
+            <CardDescription>
               Accounts receivable vs payable with projected net cash flow
             </CardDescription>
           </CardHeader>
@@ -58,10 +58,10 @@ export default async function FinancialsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-slate-100">Aging Analysis</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle>Aging Analysis</CardTitle>
+            <CardDescription>
               AR and AP exposure by aging bucket
             </CardDescription>
           </CardHeader>
@@ -71,10 +71,10 @@ export default async function FinancialsPage() {
         </Card>
       </div>
 
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-slate-100">Change Order Waterfall</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle>Change Order Waterfall</CardTitle>
+          <CardDescription>
             Original contract to revised total with project-level change-order deltas
           </CardDescription>
         </CardHeader>

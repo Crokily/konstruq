@@ -37,14 +37,14 @@ export default function ChatPage() {
 
   return (
     <section className="h-[calc(100vh-4rem)]">
-      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
-          <p className="text-sm font-medium text-slate-300">Konstruq AI</p>
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <p className="text-sm font-medium text-foreground">Konstruq AI</p>
           {messages.length > 0 ? (
             <button
               type="button"
               onClick={() => setMessages([])}
-              className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition-colors hover:text-slate-300"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Clear
@@ -55,10 +55,10 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 Konstruq AI Assistant
               </h1>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Ask questions about your construction project data
               </p>
 
@@ -69,7 +69,7 @@ export default function ChatPage() {
                     type="button"
                     onClick={() => handleSuggestionClick(suggestion)}
                     disabled={isLoading}
-                    className="rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-amber-500/50 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg border border-border bg-muted px-4 py-3 text-left text-sm text-foreground transition-colors hover:border-amber-500/50 hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {suggestion}
                   </button>
@@ -90,7 +90,7 @@ export default function ChatPage() {
                       <p
                         className={cn(
                           "text-xs font-medium",
-                          isUser ? "text-right text-amber-400" : "text-slate-400"
+                          isUser ? "text-right text-amber-500" : "text-muted-foreground"
                         )}
                       >
                         {isUser ? "You" : "Konstruq AI"}
@@ -99,8 +99,8 @@ export default function ChatPage() {
                         className={cn(
                           "rounded-2xl px-4 py-3 text-sm leading-relaxed break-words",
                           isUser
-                            ? "whitespace-pre-wrap bg-amber-500 text-slate-950"
-                            : "overflow-hidden bg-slate-800 text-slate-100"
+                            ? "whitespace-pre-wrap bg-amber-500 text-amber-950"
+                            : "overflow-hidden border border-border bg-muted text-foreground"
                         )}
                       >
                         {isUser ? <>{message.content}</> : <MessageRenderer content={message.content} />}
@@ -113,10 +113,10 @@ export default function ChatPage() {
               {isLoading ? (
                 <div className="flex justify-start">
                   <div className="max-w-[80%] space-y-1">
-                    <p className="text-xs font-medium text-slate-400">Konstruq AI</p>
-                    <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm text-slate-300">
+                    <p className="text-xs font-medium text-muted-foreground">Konstruq AI</p>
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm text-foreground">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-                      <span className="text-xs text-slate-400">Thinking...</span>
+                      <span className="text-xs text-muted-foreground">Thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -144,19 +144,19 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="shrink-0 border-t border-slate-800 bg-slate-900/95 px-4 py-4 sm:px-6">
+        <div className="shrink-0 border-t border-border bg-card px-4 py-4 sm:px-6">
           <form onSubmit={handleSubmit} className="flex items-center gap-3">
             <input
               name="prompt"
               value={input}
               onChange={handleInputChange}
               placeholder="Ask about your construction data..."
-              className="h-11 flex-1 rounded-lg border border-slate-700 bg-slate-800 px-4 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-500 focus:border-amber-500"
+              className="h-11 flex-1 rounded-lg border border-input bg-background px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-amber-500"
             />
             <Button
               type="submit"
               disabled={isInputEmpty || isLoading}
-              className="h-11 bg-amber-500 px-4 text-slate-950 hover:bg-amber-400"
+              className="h-11 bg-amber-500 px-4 text-amber-950 hover:bg-amber-400"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

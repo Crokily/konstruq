@@ -26,10 +26,10 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-100">
+        <h1 className="text-2xl font-bold">
           Welcome back, {user?.firstName || "there"}
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="mt-1 text-muted-foreground">
           Here&apos;s your construction portfolio overview.
         </p>
       </div>
@@ -37,10 +37,10 @@ export default async function DashboardPage() {
       <KPICards kpis={kpis} />
 
       <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-slate-100">Project Status</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle>Project Status</CardTitle>
+            <CardDescription>
               Distribution by current stage
             </CardDescription>
           </CardHeader>
@@ -49,10 +49,10 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-slate-100">Revenue vs Expenses</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle>Revenue vs Expenses</CardTitle>
+            <CardDescription>
               Rolling 12-month trend
             </CardDescription>
           </CardHeader>
@@ -62,10 +62,10 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-slate-800 bg-slate-900/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-slate-100">Project Health Matrix</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle>Project Health Matrix</CardTitle>
+          <CardDescription>
             Schedule completion compared to budget burn
           </CardDescription>
         </CardHeader>
