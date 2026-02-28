@@ -11,6 +11,7 @@ import {
   DollarSign,
   Settings,
   Plug,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,11 @@ const navItems = [
     label: "Financials",
     href: "/financials",
     icon: DollarSign,
+  },
+  {
+    label: "AI Chat",
+    href: "/chat",
+    icon: MessageSquare,
   },
   {
     label: "Data Sources",
