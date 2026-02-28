@@ -35,7 +35,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Create files: src/app/api/projects/route.ts (GET + POST) and src/app/api/projects/[id]/route.ts (DELETE). Use drizzle-orm query patterns consistent with existing code (eq, and, desc from drizzle-orm). Use db from src/lib/db/index.ts."
     },
     {
