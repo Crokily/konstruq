@@ -71,7 +71,7 @@
         "Verify in browser"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/components/chat/chart-block.tsx. Use Popover from shadcn (may need to add via shadcn CLI if not present: check src/components/ui/popover.tsx). The methodology field is on result.spec.methodology after US-001. Place the button in the same flex row as the Full screen button."
     },
     {
