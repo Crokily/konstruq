@@ -151,7 +151,7 @@
         "Verify in browser"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Reuse existing Table from src/components/ui/table.tsx. KPI badges similar to src/components/charts/evm-kpi-badges.tsx style."
     },
     {

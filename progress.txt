@@ -245,3 +245,27 @@ PRD: Phase 1 MVP — Auth + Procore Integration + Visualizations
   - PieChart uses different pattern: single Pie with Cell colors, not multiple data series
   - For browser testing without auth: making routes public in proxy.ts helps page load, but API routes with auth() still return 401
 ---
+
+## 2026-02-28T02:46:00Z - US-108: Chat polish — tables, KPI badges, error handling
+- Updated src/components/chat/message-renderer.tsx:
+  - Added TableSpec/KpiSpec/KpiItem interfaces with strict validation
+  - parseTableSpec: validates headers (non-empty string[]), rows (string[][])
+  - parseKpiSpec: validates items array, each needs label+value strings, optional trend (up/down/neutral)
+  - Table blocks render using shadcn Table/TableHeader/TableBody/TableRow/TableCell with dark styling (border-slate-700, bg-slate-800/50 header, text-slate-200 cells)
+  - KPI blocks render as responsive grid (2/3/4 cols) with trend indicators (▲ emerald, ▼ rose, — slate)
+  - Malformed JSON in any block type falls back to FallbackCodeBlock (pre-existing behavior preserved)
+  - Unknown block types still use JSON.stringify pretty-print fallback
+- Updated src/app/(dashboard)/chat/page.tsx:
+  - Destructured `error` and `setMessages` from useChat()
+  - Header bar: "Konstruq AI" title left, "Clear" button right (visible only when messages > 0)
+  - Clear button uses Trash2 icon, calls setMessages([]) to reset conversation
+  - Error UI: rose-tinted bubble with AlertCircle icon, "Something went wrong" message, optional error.message detail
+  - Error displayed before messagesEndRef for proper scroll positioning
+- Files changed: src/components/chat/message-renderer.tsx, src/app/(dashboard)/chat/page.tsx
+- **Learnings for future iterations:**
+  - Codex may create extra component files (kpi-from-spec.tsx, table-from-spec.tsx) that aren't actually imported — always check for unused files before committing
+  - Inline rendering in message-renderer.tsx is simpler than separate components for table/kpi — keeps all parsing logic colocated
+  - isNonEmptyStringArray and isStringMatrix are good type guard patterns for validating JSON-parsed data
+  - Dev server (next dev) starts on random port 3737 by default — use `-p 3000 -H 0.0.0.0` flags
+  - Production server (`next start -p 3100`) may be running via external supervisor — kill before starting dev
+---
