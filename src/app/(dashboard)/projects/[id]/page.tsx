@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { resolveAppUserId } from "@/lib/db/app-user";
+import {
+  buildDashboardCacheKey,
+  buildDashboardDataVersion,
+} from "@/lib/dashboard/types";
 import { projects, uploadedDatasets } from "@/lib/db/schema";
 
 export default async function ProjectDashboardPage({
@@ -61,7 +65,10 @@ export default async function ProjectDashboardPage({
   }
 
   const activeDatasets = await db
-    .select({ id: uploadedDatasets.id })
+    .select({
+      id: uploadedDatasets.id,
+      uploadedAt: uploadedDatasets.uploadedAt,
+    })
     .from(uploadedDatasets)
     .where(
       and(
@@ -93,6 +100,12 @@ export default async function ProjectDashboardPage({
     );
   }
 
+  const cacheKey = buildDashboardCacheKey({
+    variant: "project-controls",
+    projectId: project.id,
+    dataVersion: buildDashboardDataVersion(activeDatasets),
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -114,6 +127,7 @@ export default async function ProjectDashboardPage({
 
       <DashboardClient
         datasetIds={activeDatasets.map((dataset) => dataset.id)}
+        cacheKey={cacheKey}
         projectId={project.id}
         variant="project-controls"
       />

@@ -5,6 +5,10 @@ import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { EmptyDashboard } from "@/components/dashboard/empty-dashboard";
 import { db } from "@/lib/db";
 import { resolveAppUserId } from "@/lib/db/app-user";
+import {
+  buildDashboardCacheKey,
+  buildDashboardDataVersion,
+} from "@/lib/dashboard/types";
 import { uploadedDatasets } from "@/lib/db/schema";
 
 export default async function FinancialsPage() {
@@ -21,7 +25,10 @@ export default async function FinancialsPage() {
   }
 
   const datasets = await db
-    .select({ id: uploadedDatasets.id })
+    .select({
+      id: uploadedDatasets.id,
+      uploadedAt: uploadedDatasets.uploadedAt,
+    })
     .from(uploadedDatasets)
     .where(
       and(
@@ -35,9 +42,15 @@ export default async function FinancialsPage() {
     return <EmptyDashboard firstName={user.firstName} />;
   }
 
+  const cacheKey = buildDashboardCacheKey({
+    variant: "financials",
+    dataVersion: buildDashboardDataVersion(datasets),
+  });
+
   return (
     <DashboardClient
       datasetIds={datasets.map((dataset) => dataset.id)}
+      cacheKey={cacheKey}
       firstName={user.firstName}
       variant="financials"
     />
