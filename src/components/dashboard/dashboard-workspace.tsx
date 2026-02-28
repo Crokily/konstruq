@@ -1,15 +1,18 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { Building2, CalendarDays, Database, LayoutGrid, Loader2, ShieldCheck } from "lucide-react";
+import { Building2, CalendarDays, Database, LayoutGrid, ShieldCheck } from "lucide-react";
 import type {
   PortfolioKPIs,
   ProjectHealthMatrixItem,
   RevenueExpenseTrendPoint,
   UnifiedProject,
 } from "@/lib/data";
+import { ProjectHealthScatter } from "@/components/charts/project-health-scatter";
+import { ProjectStatusChart } from "@/components/charts/project-status-chart";
+import { ProjectTable } from "@/components/charts/project-table";
 import { KPICards } from "@/components/charts/kpi-cards";
+import { RevenueExpenseChart } from "@/components/charts/revenue-expense-chart";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -25,30 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ChartFallback = () => (
-  <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-    Loading chart...
-  </div>
-);
-
-const ProjectHealthScatter = dynamic(
-  () => import("@/components/charts/project-health-scatter").then((mod) => mod.ProjectHealthScatter),
-  { ssr: false, loading: () => <ChartFallback /> }
-);
-const ProjectStatusChart = dynamic(
-  () => import("@/components/charts/project-status-chart").then((mod) => mod.ProjectStatusChart),
-  { ssr: false, loading: () => <ChartFallback /> }
-);
-const ProjectTable = dynamic(
-  () => import("@/components/charts/project-table").then((mod) => mod.ProjectTable),
-  { ssr: false, loading: () => <ChartFallback /> }
-);
-const RevenueExpenseChart = dynamic(
-  () => import("@/components/charts/revenue-expense-chart").then((mod) => mod.RevenueExpenseChart),
-  { ssr: false, loading: () => <ChartFallback /> }
-);
 
 type DashboardTemplate = "executive" | "delivery" | "finance";
 export type DatasetCategory = "pm" | "erp";
