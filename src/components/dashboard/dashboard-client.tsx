@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlertTriangle, Info, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Info, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
 import { ChartDataTable, getChartDataTableColumns } from "@/components/charts/chart-data-table";
 import { DynamicChart } from "@/components/charts/dynamic-chart";
@@ -364,6 +364,7 @@ export function DashboardClient({
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const requestIdRef = useRef(0);
 
   const loadDashboard = useEffectEvent(async ({ force }: { force: boolean }) => {
@@ -415,8 +416,8 @@ export function DashboardClient({
   });
 
   useEffect(() => {
-    void loadDashboard({ force: false });
-  }, [cacheKey, datasetIds]);
+    void loadDashboard({ force: refreshKey > 0 });
+  }, [cacheKey, datasetIds, refreshKey]);
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
   const groupedCharts = useMemo(() => {
@@ -477,7 +478,7 @@ export function DashboardClient({
           message={message}
           onRetry={() => {
             clearCacheEntry(cacheKey);
-            void loadDashboard({ force: true });
+            setRefreshKey((current) => current + 1);
           }}
           isPending={isRefreshing}
         />
