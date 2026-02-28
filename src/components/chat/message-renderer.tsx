@@ -1,16 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
+import { Check, Loader2, Plus } from "lucide-react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChartBlock } from "@/components/chat/chart-block";
+import { Button } from "@/components/ui/button";
 import type { NormalizeChartSpecResult } from "@/lib/charting/spec";
 import { normalizeChartSpec } from "@/lib/charting/spec";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface MessageRendererProps {
   content: string;
+  onAddWidget?: (widget: MessageWidgetAddRequest) => void | Promise<void>;
+  getAddWidgetState?: (blockKey: string) => MessageWidgetAddState;
 }
 
 type BlockType = "chart" | "table" | "kpi";
@@ -20,7 +24,7 @@ interface TableSpec {
   rows: string[][];
 }
 
-interface KpiItem {
+export interface MessageKpiItem {
   label: string;
   value: string;
   trend?: "up" | "down" | "neutral";
@@ -28,8 +32,26 @@ interface KpiItem {
 }
 
 interface KpiSpec {
-  items: KpiItem[];
+  items: MessageKpiItem[];
 }
+
+export type MessageWidgetAddState = "idle" | "loading" | "success" | "added";
+
+export interface MessageChartAddRequest {
+  kind: "chart";
+  blockKey: string;
+  title: string;
+  spec: NormalizeChartSpecResult["spec"];
+}
+
+export interface MessageKpiAddRequest {
+  kind: "kpi";
+  blockKey: string;
+  title: string;
+  item: MessageKpiItem;
+}
+
+export type MessageWidgetAddRequest = MessageChartAddRequest | MessageKpiAddRequest;
 
 type MessageSegment =
   | { kind: "text"; content: string; key: string }
@@ -157,7 +179,7 @@ function parseKpiSpec(raw: string): KpiSpec | null {
   return { items };
 }
 
-function getKpiTrendInfo(trend: KpiItem["trend"]) {
+function getKpiTrendInfo(trend: MessageKpiItem["trend"]) {
   if (trend === "up") {
     return { symbol: "▲", className: "text-emerald-400" };
   }
@@ -167,6 +189,93 @@ function getKpiTrendInfo(trend: KpiItem["trend"]) {
   }
 
   return { symbol: "—", className: "text-muted-foreground" };
+}
+
+function hashContent(value: string): string {
+  let hash = 5381;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index);
+  }
+
+  return (hash >>> 0).toString(36);
+}
+
+function getAddWidgetBlockKey(
+  blockType: "chart" | "kpi",
+  content: string,
+  itemIndex?: number,
+): string {
+  return `${blockType}-${hashContent(
+    `${blockType}:${itemIndex ?? 0}:${content.trim()}`,
+  )}`;
+}
+
+function AddToDashboardButton({
+  onClick,
+  state,
+  className,
+}: {
+  onClick: () => void;
+  state: MessageWidgetAddState;
+  className?: string;
+}) {
+  if (state === "loading") {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled
+        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+      >
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Adding...
+      </Button>
+    );
+  }
+
+  if (state === "success") {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled
+        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+      >
+        <Check className="h-3.5 w-3.5" />
+        Added
+      </Button>
+    );
+  }
+
+  if (state === "added") {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled
+        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+      >
+        Added ✓
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="outline"
+      onClick={onClick}
+      className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+    >
+      <Plus className="h-3.5 w-3.5" />
+      Add to Dashboard
+    </Button>
+  );
 }
 
 function FallbackCodeBlock({ content }: { content: string }) {
@@ -238,7 +347,11 @@ const markdownComponents: Components = {
   td: ({ children }) => <td className="border border-border px-2 py-1.5 text-foreground">{children}</td>,
 };
 
-export function MessageRenderer({ content }: MessageRendererProps) {
+export function MessageRenderer({
+  content,
+  onAddWidget,
+  getAddWidgetState,
+}: MessageRendererProps) {
   const segments = useMemo(() => parseSegments(content), [content]);
 
   return (
@@ -265,7 +378,30 @@ export function MessageRenderer({ content }: MessageRendererProps) {
             return <InvalidChartBlock key={segment.key} />;
           }
 
-          return <ChartBlock key={segment.key} result={parsedSpecResult} />;
+          const blockKey = getAddWidgetBlockKey("chart", segment.content);
+          const addWidgetState = getAddWidgetState?.(blockKey) ?? "idle";
+
+          return (
+            <ChartBlock
+              key={segment.key}
+              result={parsedSpecResult}
+              headerActions={
+                onAddWidget ? (
+                  <AddToDashboardButton
+                    state={addWidgetState}
+                    onClick={() =>
+                      void onAddWidget({
+                        kind: "chart",
+                        blockKey,
+                        title: parsedSpecResult.spec.title,
+                        spec: parsedSpecResult.spec,
+                      })
+                    }
+                  />
+                ) : null
+              }
+            />
+          );
         }
 
         if (segment.blockType === "table") {
@@ -320,6 +456,8 @@ export function MessageRenderer({ content }: MessageRendererProps) {
             <div key={segment.key} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {parsedSpec.items.map((item, itemIndex) => {
                 const trendInfo = getKpiTrendInfo(item.trend);
+                const blockKey = getAddWidgetBlockKey("kpi", segment.content, itemIndex);
+                const addWidgetState = getAddWidgetState?.(blockKey) ?? "idle";
 
                 return (
                   <div
@@ -337,6 +475,20 @@ export function MessageRenderer({ content }: MessageRendererProps) {
                     </div>
                     {item.description ? (
                       <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+                    ) : null}
+                    {onAddWidget ? (
+                      <AddToDashboardButton
+                        state={addWidgetState}
+                        onClick={() =>
+                          void onAddWidget({
+                            kind: "kpi",
+                            blockKey,
+                            title: item.label,
+                            item,
+                          })
+                        }
+                        className="mt-3 h-8 w-full justify-center gap-1.5 px-2.5 text-xs"
+                      />
                     ) : null}
                   </div>
                 );

@@ -7,6 +7,7 @@ import {
   Building2,
   Database,
   LayoutDashboard,
+  LayoutGrid,
   FolderKanban,
   DollarSign,
   Settings,
@@ -26,6 +27,11 @@ const navItems = [
     label: "Projects",
     href: "/projects",
     icon: FolderKanban,
+  },
+  {
+    label: "My Dashboards",
+    href: "/dashboards",
+    icon: LayoutGrid,
   },
   {
     label: "Financials",

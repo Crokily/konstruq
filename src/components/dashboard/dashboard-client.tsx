@@ -8,8 +8,9 @@ import {
   useState,
   useTransition,
 } from "react";
-import { AlertTriangle, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, Info, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
+import { ChartDataTable, getChartDataTableColumns } from "@/components/charts/chart-data-table";
 import { DynamicChart } from "@/components/charts/dynamic-chart";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,11 +20,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DASHBOARD_STORAGE_KEY,
   parseDashboardCacheStore,
   parseDashboardResponse,
+  type ChartSpec,
   type DashboardCacheEntry,
   type DashboardCacheStore,
   type DashboardResponse,
@@ -306,6 +310,77 @@ function DashboardError({
   );
 }
 
+function MethodologyPopover({ chart }: { chart: ChartSpec }) {
+  if (!chart.methodology) return null;
+  const { formula, description, assumptions } = chart.methodology;
+  if (!formula && !description && (!assumptions || assumptions.length === 0)) return null;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0" aria-label="View methodology">
+          <Info className="h-3.5 w-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 border-border bg-card text-foreground" side="bottom" align="end">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Methodology</p>
+          {formula ? <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">{formula}</code> : null}
+          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+          {assumptions && assumptions.length > 0 ? (
+            <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+              {assumptions.map((a, i) => <li key={i}>{a}</li>)}
+            </ul>
+          ) : null}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function DashboardChartCard({ chart }: { chart: ChartSpec }) {
+  const columns = getChartDataTableColumns(chart);
+
+  return (
+    <Card className="border-border bg-card py-0">
+      <CardHeader className="pb-4 pt-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle>{chart.title}</CardTitle>
+            <CardDescription>
+              {chart.type === "pie"
+                ? "AI-selected distribution view"
+                : chart.type === "scatter"
+                  ? "AI-selected relationship view"
+                  : "AI-selected trend and comparison view"}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MethodologyPopover chart={chart} />
+            <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+              {chart.type}
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-6">
+        <Tabs defaultValue="chart" className="w-full">
+          <TabsList className="mb-3 h-8">
+            <TabsTrigger value="chart" className="text-xs">Chart</TabsTrigger>
+            <TabsTrigger value="table" className="text-xs">Table</TabsTrigger>
+          </TabsList>
+          <TabsContent value="chart">
+            <DynamicChart chart={chart} />
+          </TabsContent>
+          <TabsContent value="table">
+            <ChartDataTable columns={columns} data={chart.data} className="max-h-80 overflow-auto" />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DashboardClient({
   datasetIds,
   cacheKey,
@@ -475,28 +550,7 @@ export function DashboardClient({
                   </div>
                   <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
                     {charts.map((chart) => (
-                      <Card key={chart.id} className="border-border bg-card py-0">
-                        <CardHeader className="pb-4 pt-6">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-1">
-                              <CardTitle>{chart.title}</CardTitle>
-                              <CardDescription>
-                                {chart.type === "pie"
-                                  ? "AI-selected distribution view"
-                                  : chart.type === "scatter"
-                                    ? "AI-selected relationship view"
-                                    : "AI-selected trend and comparison view"}
-                              </CardDescription>
-                            </div>
-                            <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-                              {chart.type}
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-6">
-                          <DynamicChart chart={chart} />
-                        </CardContent>
-                      </Card>
+                      <DashboardChartCard key={chart.id} chart={chart} />
                     ))}
                   </div>
                 </div>
@@ -505,28 +559,7 @@ export function DashboardClient({
           ) : (
             <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
               {dashboard.charts.map((chart) => (
-                <Card key={chart.id} className="border-border bg-card py-0">
-                  <CardHeader className="pb-4 pt-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <CardTitle>{chart.title}</CardTitle>
-                        <CardDescription>
-                          {chart.type === "pie"
-                            ? "AI-selected distribution view"
-                            : chart.type === "scatter"
-                              ? "AI-selected relationship view"
-                              : "AI-selected trend and comparison view"}
-                        </CardDescription>
-                      </div>
-                      <span className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-                        {chart.type}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-6">
-                    <DynamicChart chart={chart} />
-                  </CardContent>
-                </Card>
+                <DashboardChartCard key={chart.id} chart={chart} />
               ))}
             </div>
           )}

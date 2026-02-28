@@ -6,7 +6,7 @@ import { resolveAppUserId } from "@/lib/db/app-user";
 import { db } from "@/lib/db";
 import { projects, uploadedDatasets } from "@/lib/db/schema";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
 
