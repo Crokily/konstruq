@@ -6,6 +6,7 @@ import {
   varchar,
   boolean,
   jsonb,
+  integer,
 } from "drizzle-orm/pg-core";
 
 // ============================================================
@@ -88,4 +89,38 @@ export const uploadedDatasets = pgTable("uploaded_datasets", {
   meta: jsonb("meta"),
   isActive: boolean("is_active").default(true).notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+// ============================================================
+// Custom Dashboards (user-created dashboards per project)
+// ============================================================
+export const customDashboards = pgTable("custom_dashboards", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  projectId: uuid("project_id")
+    .references(() => projects.id)
+    .notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================================
+// Dashboard Widgets (chart/KPI configuration per dashboard)
+// ============================================================
+export const dashboardWidgets = pgTable("dashboard_widgets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  dashboardId: uuid("dashboard_id")
+    .references(() => customDashboards.id)
+    .notNull(),
+  widgetType: varchar("widget_type", { length: 50 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  config: jsonb("config").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
