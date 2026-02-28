@@ -131,7 +131,7 @@
         "Verify in browser"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Parse content with regex: /```chart\\n([\\s\\S]*?)```/g. Recharts components: BarChart, LineChart, AreaChart, PieChart, ScatterChart, ComposedChart. All need 'use client'."
     },
     {
