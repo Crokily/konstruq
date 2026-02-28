@@ -72,9 +72,14 @@ function RevenueExpenseTooltip({
 
 interface RevenueExpenseChartProps {
   data: RevenueExpenseTrendPoint[];
+  onPointClick?: (point: {
+    monthLabel: string;
+    metric: "revenue" | "expenses";
+    value: number;
+  }) => void;
 }
 
-export function RevenueExpenseChart({ data }: RevenueExpenseChartProps) {
+export function RevenueExpenseChart({ data, onPointClick }: RevenueExpenseChartProps) {
   const chartData = data.slice(-12).map((point) => ({
     ...point,
     monthLabel: toMonthLabel(point.month),
@@ -83,7 +88,26 @@ export function RevenueExpenseChart({ data }: RevenueExpenseChartProps) {
   return (
     <div className="h-[300px] min-h-[300px] w-full [&_.recharts-cartesian-axis-tick-value]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData}>
+        <AreaChart
+          data={chartData}
+          onClick={(state) => {
+            const activeIndex =
+              typeof state?.activeTooltipIndex === "number"
+                ? state.activeTooltipIndex
+                : -1;
+
+            if (activeIndex < 0 || activeIndex >= chartData.length) {
+              return;
+            }
+
+            const point = chartData[activeIndex];
+            onPointClick?.({
+              monthLabel: point.monthLabel,
+              metric: "revenue",
+              value: point.revenue,
+            });
+          }}
+        >
           <defs>
             <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
