@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  buildDashboardCacheKey,
   DASHBOARD_STORAGE_KEY,
-  parseDashboardCache,
+  parseDashboardCacheStore,
   parseDashboardResponse,
-  type DashboardCache,
+  type DashboardCacheEntry,
+  type DashboardCacheStore,
   type DashboardResponse,
   type KPIItem,
 } from "@/lib/dashboard/types";
@@ -35,6 +35,7 @@ type DashboardVariant = "executive" | "project-controls" | "financials";
 
 interface DashboardClientProps {
   datasetIds: string[];
+  cacheKey: string;
   firstName?: string | null;
   projectId?: string;
   variant?: DashboardVariant;
@@ -55,6 +56,8 @@ const numberFormatter = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 2,
 });
+
+const MAX_CACHE_ENTRIES = 20;
 
 let inFlightRequestKey: string | null = null;
 let inFlightRequest: Promise<DashboardResponse> | null = null;
@@ -90,22 +93,59 @@ function errorMessage(error: unknown): string {
   return "Unable to generate your dashboard right now.";
 }
 
-function readCache(): DashboardCache | null {
-  return parseDashboardCache(window.localStorage.getItem(DASHBOARD_STORAGE_KEY));
+function readCacheStore(): DashboardCacheStore {
+  return (
+    parseDashboardCacheStore(window.localStorage.getItem(DASHBOARD_STORAGE_KEY)) ?? {
+      entries: {},
+    }
+  );
 }
 
-function writeCache(data: DashboardResponse, cacheKey: string) {
-  const cache: DashboardCache = {
-    cacheKey,
-    kpis: data.kpis,
-    charts: data.charts,
+function persistCacheStore(store: DashboardCacheStore) {
+  if (Object.keys(store.entries).length === 0) {
+    window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(store));
+}
+
+function readCacheEntry(cacheKey: string): DashboardCacheEntry | null {
+  return readCacheStore().entries[cacheKey] ?? null;
+}
+
+function writeCacheEntry(data: DashboardResponse, cacheKey: string) {
+  const nextEntries = {
+    ...readCacheStore().entries,
+    [cacheKey]: {
+      kpis: data.kpis,
+      charts: data.charts,
+      savedAt: new Date().toISOString(),
+    } satisfies DashboardCacheEntry,
   };
 
-  window.localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(cache));
+  const limitedEntries = Object.fromEntries(
+    Object.entries(nextEntries)
+      .sort(([, left], [, right]) => {
+        const leftTime = new Date(left.savedAt).getTime();
+        const rightTime = new Date(right.savedAt).getTime();
+        return rightTime - leftTime;
+      })
+      .slice(0, MAX_CACHE_ENTRIES),
+  );
+
+  persistCacheStore({ entries: limitedEntries });
 }
 
-function clearCache() {
-  window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
+function clearCacheEntry(cacheKey: string) {
+  const store = readCacheStore();
+
+  if (!(cacheKey in store.entries)) {
+    return;
+  }
+
+  delete store.entries[cacheKey];
+  persistCacheStore(store);
 }
 
 async function requestDashboard(
@@ -113,7 +153,7 @@ async function requestDashboard(
   projectId?: string,
   variant?: DashboardVariant,
 ): Promise<DashboardResponse> {
-  const requestKey = `${cacheKey}:${projectId ?? ""}:${variant ?? ""}`;
+  const requestKey = cacheKey;
 
   if (inFlightRequest && inFlightRequestKey === requestKey) {
     return inFlightRequest;
@@ -268,15 +308,11 @@ function DashboardError({
 
 export function DashboardClient({
   datasetIds,
+  cacheKey,
   firstName,
   projectId,
   variant,
 }: DashboardClientProps) {
-  const cacheKey = [
-    buildDashboardCacheKey(datasetIds),
-    projectId ?? "",
-    variant ?? "executive",
-  ].join(":");
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -288,9 +324,9 @@ export function DashboardClient({
     const requestId = ++requestIdRef.current;
 
     if (!force) {
-      const cached = readCache();
+      const cached = readCacheEntry(cacheKey);
 
-      if (cached?.cacheKey === cacheKey) {
+      if (cached) {
         setDashboard({
           datasetIds,
           kpis: cached.kpis,
@@ -312,7 +348,7 @@ export function DashboardClient({
         return;
       }
 
-      writeCache(nextDashboard, cacheKey);
+      writeCacheEntry(nextDashboard, cacheKey);
       setDashboard(nextDashboard);
       setStatus("ready");
     } catch (error) {
@@ -327,10 +363,10 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, projectId, refreshKey, variant]);
+  }, [cacheKey, datasetIds, refreshKey]);
 
   function handleRefresh() {
-    clearCache();
+    clearCacheEntry(cacheKey);
     startTransition(() => {
       setRefreshKey((current) => current + 1);
     });

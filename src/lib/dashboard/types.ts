@@ -1,4 +1,4 @@
-export const DASHBOARD_STORAGE_KEY = "konstruq-dashboard-v1";
+export const DASHBOARD_STORAGE_KEY = "konstruq-dashboard-v2";
 
 export const DASHBOARD_COLOR_PALETTE = [
   "#4f46e5",
@@ -44,8 +44,23 @@ export interface DashboardResponse extends DashboardContent {
   datasetIds: string[];
 }
 
-export interface DashboardCache extends DashboardContent {
-  cacheKey: string;
+export interface DashboardCacheEntry extends DashboardContent {
+  savedAt: string;
+}
+
+export interface DashboardCacheStore {
+  entries: Record<string, DashboardCacheEntry>;
+}
+
+export interface DashboardDatasetVersionInput {
+  id: string;
+  uploadedAt: Date | string;
+}
+
+export interface DashboardCacheKeyInput {
+  variant?: string;
+  projectId?: string;
+  dataVersion: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -227,7 +242,9 @@ export function parseDashboardResponse(value: unknown): DashboardResponse | null
   };
 }
 
-export function parseDashboardCache(value: string | null): DashboardCache | null {
+export function parseDashboardCacheStore(
+  value: string | null,
+): DashboardCacheStore | null {
   if (!value) {
     return null;
   }
@@ -235,25 +252,69 @@ export function parseDashboardCache(value: string | null): DashboardCache | null
   try {
     const parsed = JSON.parse(value) as unknown;
 
-    if (!isRecord(parsed) || typeof parsed.cacheKey !== "string") {
+    if (!isRecord(parsed) || !isRecord(parsed.entries)) {
       return null;
     }
 
-    const content = parseDashboardContent(parsed);
+    const entries = Object.fromEntries(
+      Object.entries(parsed.entries)
+        .map(([cacheKey, entry]) => {
+          if (typeof cacheKey !== "string" || !isRecord(entry)) {
+            return null;
+          }
 
-    if (!content) {
-      return null;
-    }
+          const content = parseDashboardContent(entry);
 
-    return {
-      cacheKey: parsed.cacheKey,
-      ...content,
-    };
+          if (!content || typeof entry.savedAt !== "string") {
+            return null;
+          }
+
+          return [
+            cacheKey,
+            {
+              ...content,
+              savedAt: entry.savedAt,
+            } satisfies DashboardCacheEntry,
+          ];
+        })
+        .filter(
+          (entry): entry is [string, DashboardCacheEntry] => entry !== null,
+        ),
+    );
+
+    return { entries };
   } catch {
     return null;
   }
 }
 
-export function buildDashboardCacheKey(datasetIds: string[]): string {
-  return [...datasetIds].sort((a, b) => a.localeCompare(b)).join(",");
+function normalizeUploadedAt(value: Date | string): string {
+  const parsedDate = value instanceof Date ? value : new Date(value);
+
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toISOString();
+  }
+
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export function buildDashboardDataVersion(
+  datasets: DashboardDatasetVersionInput[],
+): string {
+  return [...datasets]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((dataset) => `${dataset.id}:${normalizeUploadedAt(dataset.uploadedAt)}`)
+    .join("|");
+}
+
+export function buildDashboardCacheKey({
+  variant,
+  projectId,
+  dataVersion,
+}: DashboardCacheKeyInput): string {
+  return [
+    `variant=${variant ?? "executive"}`,
+    `project=${projectId ?? "all"}`,
+    `data=${dataVersion}`,
+  ].join("|");
 }
