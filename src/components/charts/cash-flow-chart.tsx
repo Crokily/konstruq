@@ -111,12 +111,16 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
             name="AR Amount"
             fill="#10b981"
             radius={[4, 4, 0, 0]}
+            activeBar={false}
+            stroke="none"
           />
           <Bar
             dataKey="apAmount"
             name="AP Amount"
             fill="#f43f5e"
             radius={[4, 4, 0, 0]}
+            activeBar={false}
+            stroke="none"
           />
           <Line
             type="monotone"

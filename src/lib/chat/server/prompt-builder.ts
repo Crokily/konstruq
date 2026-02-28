@@ -36,6 +36,7 @@ export function buildSystemPrompt(datasets: DatasetContextItem[], userQuestion?:
     "- Apply chart style spec: concise title, useful subtitle with scope/period, consistent series colors, readable axis labels, and avoid clutter.",
     "- Avoid pie charts for dense categories; prefer sorted or stacked bars when readability is at risk.",
     "- Charts are rendered with shadcn chart components; provide clean, valid fields so shadcn chart rendering works without manual correction.",
+    "- Never return Vega/ECharts/Plotly configs or custom chart code. Only return the chart JSON schema above for shadcn chart rendering.",
   ].join("\n");
 
   const chartPolicy = buildChartSelectionPolicyPrompt(

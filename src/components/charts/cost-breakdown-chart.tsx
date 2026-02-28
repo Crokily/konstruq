@@ -94,9 +94,9 @@ export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
           />
           <Tooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<CostBreakdownTooltip />} />
           <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 12 }} />
-          <Bar dataKey="budget" name="Budget" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="actual" name="Actual" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="committed" name="Committed" fill="#64748b" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="budget" name="Budget" fill="#3b82f6" radius={[4, 4, 0, 0]} activeBar={false} stroke="none" />
+          <Bar dataKey="actual" name="Actual" fill="#f59e0b" radius={[4, 4, 0, 0]} activeBar={false} stroke="none" />
+          <Bar dataKey="committed" name="Committed" fill="#64748b" radius={[4, 4, 0, 0]} activeBar={false} stroke="none" />
         </BarChart>
       </ResponsiveContainer>
     </div>

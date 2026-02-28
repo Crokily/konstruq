@@ -53,6 +53,124 @@ const DEFAULT_HINTS: ChartRenderHints = {
   height: 300,
 };
 
+function wrapLabel(value: unknown): string[] {
+  const text = typeof value === "string" || typeof value === "number" ? String(value) : "";
+  if (!text) {
+    return [""];
+  }
+
+  const maxLineLength = 16;
+  const normalized = text.replace(/[_/]+/g, " ").replace(/\s+/g, " ").trim();
+  const words = normalized.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    if (!current) {
+      current = word;
+      continue;
+    }
+
+    if (`${current} ${word}`.length <= maxLineLength) {
+      current = `${current} ${word}`;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length > 0 ? lines : [normalized];
+}
+
+function WrappedXAxisTick({
+  x = 0,
+  y = 0,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value?: unknown };
+}) {
+  const lines = wrapLabel(payload?.value);
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={10} textAnchor="middle" fill="currentColor" className="fill-muted-foreground text-[11px]">
+        {lines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : 12}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
+
+function shouldUseHorizontalCategoryLayout(
+  chartType: SupportedChartType,
+  data: Array<Record<string, unknown>>,
+  xAxisKey: string,
+): boolean {
+  if (chartType !== "bar" && chartType !== "stacked-bar") {
+    return false;
+  }
+
+  const labels = data
+    .map((row) => row[xAxisKey])
+    .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
+    .map((value) => String(value));
+
+  if (labels.length === 0) {
+    return false;
+  }
+
+  const longest = labels.reduce((max, label) => Math.max(max, label.length), 0);
+  const average = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
+
+  return longest > 20 || (labels.length >= 6 && average > 12);
+}
+
+function parseMetricValue(value: unknown): number | unknown {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.replace(/[$,%\s]/g, "").replace(/,/g, "");
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return value;
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  const normalized = parseMetricValue(value);
+  if (typeof normalized === "number" && Number.isFinite(normalized)) {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeChartData(
+  rows: Array<Record<string, unknown>>,
+  metrics: ChartSpecMetric[],
+): Array<Record<string, unknown>> {
+  return rows.map((row) => {
+    const normalized = { ...row };
+    for (const metric of metrics) {
+      normalized[metric.key] = parseMetricValue(row[metric.key]);
+    }
+    return normalized;
+  });
+}
+
 function getMetricColor(metric: ChartSpecMetric, index: number) {
   return metric.color ?? CHART_STYLE_SPEC.palette[index % CHART_STYLE_SPEC.palette.length];
 }
@@ -83,6 +201,65 @@ function buildChartConfig(metrics: ChartSpecMetric[]): ChartConfig {
   }, {});
 }
 
+interface PieDatum {
+  name: string;
+  value: number;
+}
+
+function buildPieData(
+  rows: Array<Record<string, unknown>>,
+  metrics: ChartSpecMetric[],
+  xAxisKey: string,
+): PieDatum[] {
+  if (rows.length === 0 || metrics.length === 0) {
+    return [];
+  }
+
+  const metricStats = metrics.map((metric) => {
+    const values = rows.map((row) => toFiniteNumber(row[metric.key])).filter((value): value is number => value !== null);
+    const nonZeroCount = values.filter((value) => value !== 0).length;
+    return { metric, validCount: values.length, nonZeroCount };
+  });
+
+  const primaryMetric =
+    metricStats
+      .slice()
+      .sort((left, right) => right.nonZeroCount - left.nonZeroCount || right.validCount - left.validCount)[0]?.metric ??
+    metrics[0];
+
+  const aggregatedByCategory = new Map<string, number>();
+  rows.forEach((row, index) => {
+    const amount = toFiniteNumber(row[primaryMetric.key]);
+    if (amount === null) {
+      return;
+    }
+
+    const rawName = row[xAxisKey];
+    const name =
+      typeof rawName === "string" || typeof rawName === "number"
+        ? String(rawName).trim() || `Item ${index + 1}`
+        : `Item ${index + 1}`;
+    aggregatedByCategory.set(name, (aggregatedByCategory.get(name) ?? 0) + amount);
+  });
+
+  const categoryData = Array.from(aggregatedByCategory.entries())
+    .map(([name, value]) => ({ name, value }))
+    .filter((item) => Number.isFinite(item.value) && item.value > 0);
+
+  if (categoryData.length > 0) {
+    return categoryData;
+  }
+
+  const metricData = metrics
+    .map((metric) => {
+      const sum = rows.reduce((total, row) => total + (toFiniteNumber(row[metric.key]) ?? 0), 0);
+      return { name: metric.label, value: sum };
+    })
+    .filter((item) => Number.isFinite(item.value) && item.value > 0);
+
+  return metricData;
+}
+
 export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
   const metrics = Array.isArray(spec.metrics)
     ? spec.metrics.filter((metric): metric is ChartSpecMetric => {
@@ -105,6 +282,18 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
     typeof spec.xAxisKey === "string" && spec.xAxisKey.trim().length > 0 ? spec.xAxisKey : "name";
   const chartType = resolveChartType(spec.type);
   const renderHints = hints ?? DEFAULT_HINTS;
+  const chartData = normalizeChartData(data, metrics);
+  const pieData = buildPieData(chartData, metrics, xAxisKey);
+  const horizontalCategoryLayout = shouldUseHorizontalCategoryLayout(chartType, chartData, xAxisKey);
+  const longestLabelLength = chartData.reduce((max, row) => {
+    const value = row[xAxisKey];
+    const text = typeof value === "string" || typeof value === "number" ? String(value) : "";
+    return Math.max(max, text.length);
+  }, 0);
+  const yAxisCategoryWidth = Math.min(320, Math.max(140, longestLabelLength * 7));
+  const chartHeight = horizontalCategoryLayout
+    ? Math.max(renderHints.height, Math.min(700, data.length * 44 + 96))
+    : renderHints.height;
 
   const scatterSeries = metrics.map((metric, index) => ({
     key: metric.key,
@@ -163,22 +352,22 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
           {warnings[0]}
         </div>
       ) : null}
-      <ChartContainer config={chartConfig} className="w-full" style={{ height: `${renderHints.height}px` }}>
+      <ChartContainer config={chartConfig} className="w-full" style={{ height: `${chartHeight}px` }}>
         {chartType === "line" ? (
-          <LineChart accessibilityLayer data={data} margin={CHART_STYLE_SPEC.chartMargin}>
+          <LineChart accessibilityLayer data={chartData} margin={CHART_STYLE_SPEC.chartMargin}>
             <CartesianGrid
               stroke={CHART_STYLE_SPEC.gridStroke}
               opacity={CHART_STYLE_SPEC.gridOpacity}
               strokeDasharray={CHART_STYLE_SPEC.gridDash}
             />
-            <XAxis
-              dataKey={xAxisKey}
-              tickLine={false}
-              axisLine={false}
-              angle={renderHints.xAxisAngle}
-              textAnchor={renderHints.xAxisAngle === 0 ? "middle" : "end"}
-              height={renderHints.xAxisHeight}
-            />
+              <XAxis
+                dataKey={xAxisKey}
+                tickLine={false}
+                axisLine={false}
+                height={renderHints.xAxisHeight}
+                tick={<WrappedXAxisTick />}
+                interval={0}
+              />
             <YAxis tickLine={false} axisLine={false} />
             <ChartTooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
@@ -196,20 +385,20 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             ))}
           </LineChart>
         ) : chartType === "area" ? (
-          <AreaChart accessibilityLayer data={data} margin={CHART_STYLE_SPEC.chartMargin}>
+          <AreaChart accessibilityLayer data={chartData} margin={CHART_STYLE_SPEC.chartMargin}>
             <CartesianGrid
               stroke={CHART_STYLE_SPEC.gridStroke}
               opacity={CHART_STYLE_SPEC.gridOpacity}
               strokeDasharray={CHART_STYLE_SPEC.gridDash}
             />
-            <XAxis
-              dataKey={xAxisKey}
-              tickLine={false}
-              axisLine={false}
-              angle={renderHints.xAxisAngle}
-              textAnchor={renderHints.xAxisAngle === 0 ? "middle" : "end"}
-              height={renderHints.xAxisHeight}
-            />
+              <XAxis
+                dataKey={xAxisKey}
+                tickLine={false}
+                axisLine={false}
+                height={renderHints.xAxisHeight}
+                tick={<WrappedXAxisTick />}
+                interval={0}
+              />
             <YAxis tickLine={false} axisLine={false} />
             <ChartTooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
@@ -227,15 +416,19 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             ))}
           </AreaChart>
         ) : chartType === "pie" ? (
-          <PieChart accessibilityLayer margin={CHART_STYLE_SPEC.chartMargin}>
+          pieData.length === 0 ? (
+            <EmptyChartState message="Pie chart needs at least one positive numeric series." />
+          ) : (
+            <PieChart accessibilityLayer margin={CHART_STYLE_SPEC.chartMargin}>
             <ChartTooltip content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
-            <Pie data={data} dataKey={metrics[0].key} nameKey={xAxisKey} name={metrics[0].label} outerRadius={100}>
-              {data.map((_, index) => (
+            <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100}>
+              {pieData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={CHART_STYLE_SPEC.palette[index % CHART_STYLE_SPEC.palette.length]} stroke="none" />
               ))}
             </Pie>
           </PieChart>
+          )
         ) : chartType === "scatter" ? (
           <ScatterChart accessibilityLayer margin={CHART_STYLE_SPEC.chartMargin}>
             <CartesianGrid
@@ -259,21 +452,42 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             )}
           </ScatterChart>
         ) : chartType === "stacked-bar" ? (
-          <BarChart accessibilityLayer data={data} margin={CHART_STYLE_SPEC.chartMargin}>
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            margin={horizontalCategoryLayout ? { top: 8, right: 16, left: 16, bottom: 14 } : CHART_STYLE_SPEC.chartMargin}
+            layout={horizontalCategoryLayout ? "vertical" : "horizontal"}
+          >
             <CartesianGrid
               stroke={CHART_STYLE_SPEC.gridStroke}
               opacity={CHART_STYLE_SPEC.gridOpacity}
               strokeDasharray={CHART_STYLE_SPEC.gridDash}
             />
-            <XAxis
-              dataKey={xAxisKey}
-              tickLine={false}
-              axisLine={false}
-              angle={renderHints.xAxisAngle}
-              textAnchor={renderHints.xAxisAngle === 0 ? "middle" : "end"}
-              height={renderHints.xAxisHeight}
-            />
-            <YAxis tickLine={false} axisLine={false} />
+            {horizontalCategoryLayout ? (
+              <>
+                <XAxis type="number" tickLine={false} axisLine={false} />
+                <YAxis
+                  type="category"
+                  dataKey={xAxisKey}
+                  tickLine={false}
+                  axisLine={false}
+                  width={yAxisCategoryWidth}
+                  interval={0}
+                />
+              </>
+            ) : (
+              <>
+                <XAxis
+                  dataKey={xAxisKey}
+                  tickLine={false}
+                  axisLine={false}
+                  height={renderHints.xAxisHeight}
+                  tick={<WrappedXAxisTick />}
+                  interval={0}
+                />
+                <YAxis tickLine={false} axisLine={false} />
+              </>
+            )}
             <ChartTooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
             {metrics.map((metric, index) => (
@@ -283,12 +497,14 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 name={metric.label}
                 fill={getMetricColor(metric, index)}
                 stackId="stack"
-                radius={[4, 4, 0, 0]}
+                activeBar={false}
+                stroke="none"
+                radius={horizontalCategoryLayout ? [0, 4, 4, 0] : [4, 4, 0, 0]}
               />
             ))}
           </BarChart>
         ) : chartType === "composed" ? (
-          <ComposedChart accessibilityLayer data={data} margin={CHART_STYLE_SPEC.chartMargin}>
+          <ComposedChart accessibilityLayer data={chartData} margin={CHART_STYLE_SPEC.chartMargin}>
             <CartesianGrid
               stroke={CHART_STYLE_SPEC.gridStroke}
               opacity={CHART_STYLE_SPEC.gridOpacity}
@@ -298,9 +514,9 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
               dataKey={xAxisKey}
               tickLine={false}
               axisLine={false}
-              angle={renderHints.xAxisAngle}
-              textAnchor={renderHints.xAxisAngle === 0 ? "middle" : "end"}
               height={renderHints.xAxisHeight}
+              tick={<WrappedXAxisTick />}
+              interval={0}
             />
             <YAxis tickLine={false} axisLine={false} />
             <ChartTooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltipContent />} />
@@ -312,6 +528,8 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                   dataKey={metric.key}
                   name={metric.label}
                   fill={getMetricColor(metric, index)}
+                  activeBar={false}
+                  stroke="none"
                   radius={[4, 4, 0, 0]}
                 />
               ) : (
@@ -328,21 +546,42 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             )}
           </ComposedChart>
         ) : (
-          <BarChart accessibilityLayer data={data} margin={CHART_STYLE_SPEC.chartMargin}>
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            margin={horizontalCategoryLayout ? { top: 8, right: 16, left: 16, bottom: 14 } : CHART_STYLE_SPEC.chartMargin}
+            layout={horizontalCategoryLayout ? "vertical" : "horizontal"}
+          >
             <CartesianGrid
               stroke={CHART_STYLE_SPEC.gridStroke}
               opacity={CHART_STYLE_SPEC.gridOpacity}
               strokeDasharray={CHART_STYLE_SPEC.gridDash}
             />
-            <XAxis
-              dataKey={xAxisKey}
-              tickLine={false}
-              axisLine={false}
-              angle={renderHints.xAxisAngle}
-              textAnchor={renderHints.xAxisAngle === 0 ? "middle" : "end"}
-              height={renderHints.xAxisHeight}
-            />
-            <YAxis tickLine={false} axisLine={false} />
+            {horizontalCategoryLayout ? (
+              <>
+                <XAxis type="number" tickLine={false} axisLine={false} />
+                <YAxis
+                  type="category"
+                  dataKey={xAxisKey}
+                  tickLine={false}
+                  axisLine={false}
+                  width={yAxisCategoryWidth}
+                  interval={0}
+                />
+              </>
+            ) : (
+              <>
+                <XAxis
+                  dataKey={xAxisKey}
+                  tickLine={false}
+                  axisLine={false}
+                  height={renderHints.xAxisHeight}
+                  tick={<WrappedXAxisTick />}
+                  interval={0}
+                />
+                <YAxis tickLine={false} axisLine={false} />
+              </>
+            )}
             <ChartTooltip cursor={{ fill: "rgba(148, 163, 184, 0.12)" }} content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
             {metrics.map((metric, index) => (
@@ -351,7 +590,9 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 dataKey={metric.key}
                 name={metric.label}
                 fill={getMetricColor(metric, index)}
-                radius={[4, 4, 0, 0]}
+                activeBar={false}
+                stroke="none"
+                radius={horizontalCategoryLayout ? [0, 4, 4, 0] : [4, 4, 0, 0]}
               />
             ))}
           </BarChart>
