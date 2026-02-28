@@ -8,7 +8,7 @@ import { trimMessages } from "./_lib/history";
 import { CHAT_SYSTEM_PROMPT } from "./_lib/system-prompt";
 import { resolveAppUserId } from "./_lib/user";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       messages: trimMessages(incomingMessages),
       tools: createDataTools(appUserId, projectId),
       maxSteps: 8,
+      experimental_continueSteps: true,
       onFinish({ usage }) {
         if (!usage) {
           return;
