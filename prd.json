@@ -12,8 +12,8 @@
       "title": "Add projects table and modify uploadedDatasets schema",
       "description": "As a developer, I need the database schema to support user-created projects with datasets linked to them.",
       "acceptanceCriteria": [
-        "New `projects` table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK → users.id, notNull), name (varchar 255, notNull), description (text, nullable), status (varchar 50, default 'active', notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
-        "uploadedDatasets table gains projectId column: uuid FK → projects.id, nullable",
+        "New `projects` table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK \u2192 users.id, notNull), name (varchar 255, notNull), description (text, nullable), status (varchar 50, default 'active', notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "uploadedDatasets table gains projectId column: uuid FK \u2192 projects.id, nullable",
         "Run `npx drizzle-kit push` successfully against Neon",
         "Clear all existing rows from uploaded_datasets table via SQL: DELETE FROM uploaded_datasets",
         "Typecheck passes"
@@ -27,9 +27,9 @@
       "title": "Projects CRUD API endpoints",
       "description": "As a user, I need API endpoints to create, list, and delete my projects.",
       "acceptanceCriteria": [
-        "POST /api/projects — creates project for authenticated user, accepts JSON { name, description? }, returns { id, name, description, status, createdAt }",
-        "GET /api/projects — returns array of user's projects ordered by updatedAt desc, each includes datasetCount (count of active uploadedDatasets for that project)",
-        "DELETE /api/projects/[id] — sets project status to 'archived', returns { success: true }",
+        "POST /api/projects \u2014 creates project for authenticated user, accepts JSON { name, description? }, returns { id, name, description, status, createdAt }",
+        "GET /api/projects \u2014 returns array of user's projects ordered by updatedAt desc, each includes datasetCount (count of active uploadedDatasets for that project)",
+        "DELETE /api/projects/[id] \u2014 sets project status to 'archived', returns { success: true }",
         "All endpoints require auth via Clerk auth(), resolve appUserId via resolveAppUserId from src/lib/db/app-user.ts",
         "Returns 401 for unauthenticated, 404 for not found, 400 for invalid input",
         "Typecheck passes"
@@ -55,7 +55,7 @@
         "Verify in browser"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Replace entire content of src/app/(dashboard)/projects/page.tsx. Remove MockDataProvider usage. Use existing UI components from src/components/ui/ (Card, Button, Dialog, Badge). Keep the PageHeader component. Style consistent with existing dark theme."
     },
     {
@@ -158,7 +158,7 @@
         "PRESERVED UNCHANGED: Source and schema integrity rules section",
         "ENHANCED: Chart policy section gains visualization guidance from agentprompt.txt section 4 (confidence intervals, fan charts, heatmaps, risk networks)",
         "NEW SECTION: 'Data Understanding & Pre-Processing' from agentprompt.txt section 1",
-        "NEW SECTION: 'Forecasting Methodology' from agentprompt.txt section 2 — framed as analytical reasoning framework, not literal model execution",
+        "NEW SECTION: 'Forecasting Methodology' from agentprompt.txt section 2 \u2014 framed as analytical reasoning framework, not literal model execution",
         "NEW SECTION: 'Key Forecast Metrics' from agentprompt.txt section 3 (cost, schedule, resource, risk forecasting specs)",
         "NEW SECTION: 'Bias Minimisation Rules' from agentprompt.txt section 5",
         "All new sections placed AFTER the existing functional instruction sections",
@@ -174,10 +174,10 @@
       "description": "As a developer, I need reusable utilities for dashboard generation so three dashboard variants share common infrastructure.",
       "acceptanceCriteria": [
         "New file src/lib/dashboard/generate.ts created with shared functions",
-        "fetchUserDatasets(appUserId: string, projectId?: string) — returns DatasetContextItem[] from DB with optional project filter",
-        "callDashboardLLM(systemPrompt: string, userPrompt: string) — calls Mistral via generateText, returns raw text",
-        "parseJsonResponse(text: string) — extracts and parses JSON from LLM response (reuses existing parseJsonText logic)",
-        "buildDashboardUserPrompt(datasets: DatasetContextItem[], variant: string) — builds the user prompt with dataset context",
+        "fetchUserDatasets(appUserId: string, projectId?: string) \u2014 returns DatasetContextItem[] from DB with optional project filter",
+        "callDashboardLLM(systemPrompt: string, userPrompt: string) \u2014 calls Mistral via generateText, returns raw text",
+        "parseJsonResponse(text: string) \u2014 extracts and parses JSON from LLM response (reuses existing parseJsonText logic)",
+        "buildDashboardUserPrompt(datasets: DatasetContextItem[], variant: string) \u2014 builds the user prompt with dataset context",
         "DASHBOARD_PROMPTS map exported: { executive: string, 'project-controls': string, financials: string }",
         "Executive prompt is the existing DASHBOARD_SYSTEM_PROMPT content",
         "project-controls and financials prompts are placeholder strings (to be filled in US-011/012/013)",
@@ -187,7 +187,7 @@
       ],
       "priority": 10,
       "passes": false,
-      "notes": "Move dataset fetching and LLM calling logic out of route.ts into the shared lib. The route.ts becomes thin: auth check → call shared utils → return response. The variant parameter determines which system prompt to use."
+      "notes": "Move dataset fetching and LLM calling logic out of route.ts into the shared lib. The route.ts becomes thin: auth check \u2192 call shared utils \u2192 return response. The variant parameter determines which system prompt to use."
     },
     {
       "id": "US-011",
@@ -195,7 +195,7 @@
       "description": "As a user, I want the executive dashboard to prioritize construction-relevant charts based on my uploaded data types.",
       "acceptanceCriteria": [
         "Executive system prompt in DASHBOARD_PROMPTS includes data-aware chart priority rules",
-        "Priority rules: cost/budget data → Budget vs Actual, Cost Variance Trend, Top Variance Cost Codes; schedule data → Schedule Variance, SPI Trend, Task Completion %; EVM data → EVM S-Curve, CPI/SPI Trend; labor/resource data → Resource Utilisation, Productivity Trend; subcontractor data → On-Time Delivery %, Quality Scorecard; cash flow data → Cashflow Forecast vs Actual, Outstanding Aging",
+        "Priority rules: cost/budget data \u2192 Budget vs Actual, Cost Variance Trend, Top Variance Cost Codes; schedule data \u2192 Schedule Variance, SPI Trend, Task Completion %; EVM data \u2192 EVM S-Curve, CPI/SPI Trend; labor/resource data \u2192 Resource Utilisation, Productivity Trend; subcontractor data \u2192 On-Time Delivery %, Quality Scorecard; cash flow data \u2192 Cashflow Forecast vs Actual, Outstanding Aging",
         "Prompt references Dashboard #1 tab structure from docs/3dashboard.txt for chart grouping guidance",
         "ChartSpec type in src/lib/dashboard/types.ts gains optional group?: string field",
         "parseDashboardContent and parseChartSpec handle optional group field",
@@ -212,10 +212,10 @@
       "title": "AI-generated project controls dashboard for /projects/[id]",
       "description": "As a user, I want /projects/[id] to show an AI-generated dashboard focused on project controls using that project's uploaded datasets.",
       "acceptanceCriteria": [
-        "/projects/[id]/page.tsx completely replaced — no MockDataProvider usage",
+        "/projects/[id]/page.tsx completely replaced \u2014 no MockDataProvider usage",
         "Page fetches project info from DB (name, description, status)",
         "Page renders DashboardClient (or variant) that calls POST /api/dashboard/generate with { projectId: id, variant: 'project-controls' }",
-        "project-controls system prompt in DASHBOARD_PROMPTS focuses on: Master Schedule Tracking (Baseline vs Actual, Schedule Variance), Lookahead Planning (Task Readiness, Dependencies), Delay Analysis (Delay Causes, Critical Path Impact), Equipment Utilisation — referencing Dashboard #2 from docs/3dashboard.txt",
+        "project-controls system prompt in DASHBOARD_PROMPTS focuses on: Master Schedule Tracking (Baseline vs Actual, Schedule Variance), Lookahead Planning (Task Readiness, Dependencies), Delay Analysis (Delay Causes, Critical Path Impact), Equipment Utilisation \u2014 referencing Dashboard #2 from docs/3dashboard.txt",
         "Page shows project name and description in header area",
         "Shows empty state component if project has no datasets (with link to /data-sources)",
         "Typecheck passes",
@@ -230,9 +230,9 @@
       "title": "AI-generated financial dashboard for /financials",
       "description": "As a user, I want the Financials page to show an AI-generated financial analytics dashboard across all my projects.",
       "acceptanceCriteria": [
-        "/financials/page.tsx completely replaced — no MockDataProvider usage",
+        "/financials/page.tsx completely replaced \u2014 no MockDataProvider usage",
         "Page renders DashboardClient that calls POST /api/dashboard/generate with { variant: 'financials' } (no projectId = portfolio level)",
-        "Financials system prompt in DASHBOARD_PROMPTS focuses on: Budget Control (Budget vs Actual vs Forecast, Cost Variance), EVM (S-Curve, CPI/SPI, EAC Forecast), Cash Flow & Claims (Forecast vs Actual, Aging, Retention), Cost Detail (Breakdown by Code, Change Order Impact) — referencing Dashboard #3 from docs/3dashboard.txt",
+        "Financials system prompt in DASHBOARD_PROMPTS focuses on: Budget Control (Budget vs Actual vs Forecast, Cost Variance), EVM (S-Curve, CPI/SPI, EAC Forecast), Cash Flow & Claims (Forecast vs Actual, Aging, Retention), Cost Detail (Breakdown by Code, Change Order Impact) \u2014 referencing Dashboard #3 from docs/3dashboard.txt",
         "Shows empty state if user has no datasets",
         "Loading state shows skeleton consistent with main dashboard",
         "All old chart component imports removed (AgingChart, CashFlowChart, ChangeOrderWaterfall)",
@@ -251,17 +251,17 @@
         "src/lib/data/mock/ directory deleted (aging.ts, change-orders.ts, financials.ts, projects.ts, schedules.ts)",
         "src/lib/data/providers/mock.ts deleted",
         "src/lib/data/providers/interface.ts kept ONLY if still imported by live code; deleted otherwise",
-        "src/lib/data/index.ts updated or deleted — remove all mock-related exports",
+        "src/lib/data/index.ts updated or deleted \u2014 remove all mock-related exports",
         "src/components/dashboard/dashboard-workspace.tsx deleted (confirmed zero imports)",
         "No remaining imports of any deleted file in any .ts/.tsx file (verified via grep)",
         "src/lib/types/procore.ts and src/lib/types/sage.ts retained (referenced by dataConnections/syncedProjects schema)",
-        "Static chart components (aging-chart, cash-flow-chart, change-order-waterfall, evm-chart, evm-kpi-badges, project-health-scatter, project-status-chart, project-table, revenue-expense-chart, kpi-cards, cost-breakdown-chart) — delete any that are no longer imported by any live page",
+        "Static chart components (aging-chart, cash-flow-chart, change-order-waterfall, evm-chart, evm-kpi-badges, project-health-scatter, project-status-chart, project-table, revenue-expense-chart, kpi-cards, cost-breakdown-chart) \u2014 delete any that are no longer imported by any live page",
         "Typecheck passes",
         "npm run build passes with zero errors"
       ],
       "priority": 14,
       "passes": false,
-      "notes": "This is the final cleanup story. Before deleting each file, grep the entire src/ directory to confirm zero imports. Be conservative — only delete files with zero remaining imports. The DynamicChart component and chart-from-spec.tsx are used by the AI dashboard system and must be kept. Run full build at the end to verify."
+      "notes": "This is the final cleanup story. Before deleting each file, grep the entire src/ directory to confirm zero imports. Be conservative \u2014 only delete files with zero remaining imports. The DynamicChart component and chart-from-spec.tsx are used by the AI dashboard system and must be kept. Run full build at the end to verify."
     }
   ]
 }
