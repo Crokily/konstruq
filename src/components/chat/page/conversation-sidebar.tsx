@@ -61,6 +61,9 @@ export function ConversationSidebar({
               <p className="mt-1 text-xs text-muted-foreground">
                 {formatConversationTime(conversation.updatedAt)} · {conversation.messages.length} messages
               </p>
+              {conversation.projectId ? (
+                <p className="mt-1 text-[11px] font-medium text-amber-600/90">Project scoped</p>
+              ) : null}
             </button>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>

@@ -1,177 +1,257 @@
 {
   "project": "Konstruq",
-  "branchName": "ralph/phase2-ai-chat",
-  "description": "Phase 2: AI Chat with dynamic data analysis — file upload, Mistral Large chat, inline chart rendering",
+  "branchName": "ralph/konstruq-v3",
+  "description": "AI output optimization (chart/table tabs, methodology popovers, suppress formula text) and custom dashboards (create, build via sidebar chat, save, refresh)",
   "qualityChecks": {
-    "typecheck": "npx tsc --noEmit",
-    "lint": "npx eslint . --fix"
+    "typecheck": "cd /home/ubuntu/konstruq && npx tsc --noEmit",
+    "lint": "cd /home/ubuntu/konstruq && npx eslint . --fix"
   },
   "userStories": [
     {
-      "id": "US-101",
-      "title": "Install AI SDK dependencies and create chat API route skeleton",
-      "description": "As a developer, I need AI SDK packages installed and a basic /api/chat route streaming from Mistral Large.",
+      "id": "US-001",
+      "title": "Extend chart specs with table data and methodology metadata",
+      "description": "As a developer, I need chart spec types to carry methodology info so the UI can render formulas on demand.",
       "acceptanceCriteria": [
-        "ai and @ai-sdk/mistral packages installed in package.json",
-        "MISTRAL_API_KEY read from environment",
-        "POST /api/chat route at src/app/api/chat/route.ts accepts { messages } body",
-        "Route uses streamText with mistral('mistral-large-latest') and returns toDataStreamResponse()",
-        "Basic system prompt: construction data analysis assistant",
-        "Typecheck passes",
-        "Lint passes"
+        "Chat ChartSpec in src/lib/charting/spec.ts gains optional methodology?: { formula?: string; description?: string; assumptions?: string[] }",
+        "Dashboard ChartSpec in src/lib/dashboard/types.ts gains same optional methodology field",
+        "parseChartSpec in types.ts parses methodology from raw JSON if present (formula: string, description: string, assumptions: string[])",
+        "normalizeChartSpec in spec.ts passes through methodology field if present in raw input",
+        "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "env var MISTRAL_API_KEY should be added to .env.local. Use: import { mistral } from '@ai-sdk/mistral'; import { streamText } from 'ai';"
+      "notes": "Two separate ChartSpec types exist: one for chat (src/lib/charting/spec.ts) and one for dashboard (src/lib/dashboard/types.ts). Both need the methodology field. The chat spec has normalizeChartSpec(); the dashboard spec has parseChartSpec(). Keep changes minimal \u2014 just add the optional field and parse it."
     },
     {
-      "id": "US-102",
-      "title": "Database schema for uploaded datasets and chat sessions",
-      "description": "As a developer, I need DB tables to store user-uploaded data files parsed as JSON.",
+      "id": "US-002",
+      "title": "Chart/Table tab toggle for chat chart blocks",
+      "description": "As a user, I want to switch between Chart and Table views on every chart in chat messages.",
       "acceptanceCriteria": [
-        "New table uploaded_datasets in src/lib/db/schema.ts: id(uuid), userId(uuid FK), category(varchar), fileName(varchar), sheets(jsonb), meta(jsonb), isActive(boolean), uploadedAt(timestamp)",
-        "Run npm run db:push to push schema to Neon successfully",
-        "Typecheck passes"
+        "ChartBlock component (src/components/chat/chart-block.tsx) wraps content in shadcn Tabs with two tabs: Chart (default) and Table",
+        "Chart tab renders existing ChartFromSpec unchanged",
+        "Table tab renders chart data array as shadcn Table: headers from xAxisKey + metrics keys, rows from data, numeric values locale-formatted, scrollable container",
+        "Tab switching is instant \u2014 both views pre-rendered (no lazy load)",
+        "Full-screen dialog also includes the Chart/Table tabs",
+        "Typecheck passes",
+        "Verify in browser"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "sheets column stores: [{sheetName: string, columns: string[], rowCount: number, rows: Record<string,unknown>[]}]. Use existing drizzle.config.ts which loads .env.local via dotenv."
+      "notes": "Use existing Tabs component from src/components/ui/tabs.tsx and Table from src/components/ui/table.tsx. The chart data is in result.spec.data (array of objects). For column headers, use [spec.xAxisKey, ...spec.metrics.map(m => m.key)] for non-pie charts, or [spec.nameKey/xAxisKey, spec.valueKey/metrics[0].key] for pie. Format numbers with Intl.NumberFormat."
     },
     {
-      "id": "US-103",
-      "title": "File upload API — parse CSV and XLSX to JSON",
-      "description": "As a developer, I need an API route that accepts file uploads, parses CSV/XLSX into JSON, and stores in DB.",
+      "id": "US-003",
+      "title": "Update chat system prompt to suppress formula text and embed methodology",
+      "description": "As a user, I want the AI to stop dumping formulas as plain text and embed them in chart metadata instead.",
       "acceptanceCriteria": [
-        "papaparse and xlsx packages installed (plus @types/papaparse)",
-        "POST /api/upload route at src/app/api/upload/route.ts",
-        "Accepts multipart/form-data with file and category fields",
-        "CSV parsed with papaparse (header:true), XLSX all sheets parsed with xlsx",
-        "Each sheet stored as {sheetName, columns, rowCount, rows}",
-        "Saved to uploaded_datasets table with userId from Clerk auth",
-        "Returns JSON with id, fileName, category, sheets summary (no full rows in response)",
-        "Error handling: no file, unsupported format, parse failure",
+        "CHAT_SYSTEM_PROMPT updated with rule: Do NOT write formulas, equations, or step-by-step calculation breakdowns as plain text in the message body",
+        "New rule: Embed analytical methodology in each chart block's methodology field: { formula?: string, description?: string, assumptions?: string[] }",
+        "New rule: Message text should contain only brief insight summary, key findings, and actionable recommendations (3-5 sentences max before/after charts)",
+        "Chart block format spec in prompt updated to show optional methodology field in the JSON schema",
+        "Existing tool workflow section preserved unchanged",
+        "Existing output format rules (chart/table/kpi block syntax) preserved unchanged",
+        "Existing source and schema integrity rules preserved unchanged",
         "Typecheck passes"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Use request.formData() for file access. CSV: new TextDecoder().decode(arrayBuffer). XLSX: read(arrayBuffer, {type:'array'}). Clerk auth: import { auth } from '@clerk/nextjs/server'."
+      "notes": "Modify src/app/api/chat/_lib/system-prompt.ts. Add the methodology suppression rules to the 'Output format rules' section. Add methodology to the chart JSON example. Keep all existing sections intact \u2014 this is additive. The key behavioral change: AI should produce cleaner, more concise text with rich chart metadata."
     },
     {
-      "id": "US-104",
-      "title": "Data Sources page — upload UI and dataset list",
-      "description": "As a user, I want a page to upload my data files and see what I've uploaded.",
+      "id": "US-004",
+      "title": "Methodology popover on chart blocks",
+      "description": "As a user, I want to click an info button on a chart to see the formula/methodology used.",
       "acceptanceCriteria": [
-        "New route /data-sources with page at src/app/(dashboard)/data-sources/page.tsx",
-        "Data Sources link added to sidebar navigation with appropriate icon",
-        "Two sections: PM Data and ERP Data, each with upload button and dataset list",
-        "Upload calls POST /api/upload with correct category",
-        "List shows: fileName, sheet count, row count, upload date per dataset",
-        "Delete button per dataset calls DELETE /api/upload/[id] route",
-        "DELETE /api/upload/[id] route implemented to remove from DB",
-        "Loading and success/error feedback during upload",
-        "Dark theme consistent with app",
+        "When methodology exists on a chart spec, ChartBlock renders a small info icon button (lucide Info or Calculator icon) next to the existing Full screen button",
+        "Clicking the button opens a shadcn Popover showing: formula in monospace/code font, description as paragraph, assumptions as bulleted list",
+        "If no methodology data exists on the spec, the info button is not rendered at all",
+        "Popover styled with dark theme: border-border, bg-card, text-foreground",
+        "Works in both inline and full-screen dialog views",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Use 'use client' for upload interactions. Server component for initial data load. Add to sidebar in src/components/layout/sidebar.tsx. Use existing Card/Button from shadcn."
+      "notes": "Modify src/components/chat/chart-block.tsx. Use Popover from shadcn (may need to add via shadcn CLI if not present: check src/components/ui/popover.tsx). The methodology field is on result.spec.methodology after US-001. Place the button in the same flex row as the Full screen button."
     },
     {
-      "id": "US-105",
-      "title": "Chat page — full chat UI with useChat",
-      "description": "As a user, I want a dedicated chat page to talk to the AI assistant.",
+      "id": "US-005",
+      "title": "Chart/Table tabs on dashboard charts",
+      "description": "As a user, I want the same Chart/Table toggle on AI-generated dashboard charts.",
       "acceptanceCriteria": [
-        "New route /chat with page at src/app/(dashboard)/chat/page.tsx",
-        "AI Chat link added to sidebar navigation with MessageSquare icon",
-        "Full-height chat layout: scrollable messages + fixed input bar at bottom",
-        "Uses useChat hook from ai/react pointing to /api/chat",
-        "User messages right-aligned amber, assistant messages left-aligned",
-        "Streaming: tokens appear incrementally",
-        "Empty state: welcome message with suggestion prompts",
-        "Dark theme (slate-950 bg, slate-800 cards)",
+        "DashboardClient (src/components/dashboard/dashboard-client.tsx) chart cards gain shadcn Tabs in the card: Chart (default) | Table",
+        "Table view renders chart data array as formatted Table (same approach as US-002: headers from keys, formatted values, scrollable)",
+        "KPI cards are NOT affected \u2014 no table view for KPIs",
+        "Chart grouping sections still render correctly with tabs present",
+        "Methodology info button also appears on dashboard chart cards when methodology field exists in ChartSpec",
+        "Extract shared ChartDataTable component to src/components/charts/chart-data-table.tsx for reuse between chat and dashboard",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "useChat returns { messages, input, handleInputChange, handleSubmit, isLoading }. Message type has role and content. Scroll to bottom on new messages."
+      "notes": "This story should extract the table rendering from US-002 into a shared component. Then both ChartBlock (chat) and DashboardClient (dashboard) import it. The dashboard ChartSpec is from src/lib/dashboard/types.ts which has different shape (xKey/yKeys vs xAxisKey/metrics) \u2014 the shared component needs to handle both shapes or normalize to a common format."
     },
     {
-      "id": "US-106",
-      "title": "Wire uploaded data into chat context",
-      "description": "As a developer, I need the chat API to load user datasets and include them in the AI system prompt.",
+      "id": "US-006",
+      "title": "Database schema for custom dashboards and widgets",
+      "description": "As a developer, I need DB tables to store user-created dashboards and their widget configurations.",
       "acceptanceCriteria": [
-        "/api/chat loads all uploaded_datasets for current user via Clerk auth",
-        "System prompt lists each dataset: fileName, category, sheets with columns and rowCount",
-        "For datasets fitting in context (<80K tokens est): full row data as JSON in prompt",
-        "For oversized datasets: schema + first 20 rows with truncation note",
-        "Token estimation: JSON.stringify(rows).length / 4",
-        "System prompt instructs AI about chart/table/kpi output formats",
+        "New customDashboards table in schema.ts: id (uuid PK defaultRandom), userId (uuid FK\u2192users notNull), projectId (uuid FK\u2192projects notNull), name (varchar 255 notNull), description (text nullable), status (varchar 50 default 'active' notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "New dashboardWidgets table in schema.ts: id (uuid PK defaultRandom), dashboardId (uuid FK\u2192customDashboards notNull), widgetType (varchar 50 notNull), title (varchar 255 notNull), config (jsonb notNull), sortOrder (integer default 0 notNull), createdAt (timestamp defaultNow notNull), updatedAt (timestamp defaultNow notNull)",
+        "Both tables exported from schema.ts",
+        "Run npx drizzle-kit push successfully against Neon",
         "Typecheck passes"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Load datasets: db.select().from(uploadedDatasets).where(eq(uploadedDatasets.userId, appUserId)). Need to resolve Clerk userId to app user id, or store clerkId in uploaded_datasets directly."
+      "notes": "Follow existing schema patterns (uuid PKs, FK references, timestamps). Place new tables after the uploadedDatasets section. widgetType values: 'chart' or 'kpi'. config stores the full ChartSpec or KPIItem JSON."
     },
     {
-      "id": "US-107",
-      "title": "Chart rendering in chat messages",
-      "description": "As a user, I want to see charts inline in AI responses when visualization is appropriate.",
+      "id": "US-007",
+      "title": "Custom dashboards CRUD API",
+      "description": "As a user, I need API endpoints to create, list, get, and delete custom dashboards.",
       "acceptanceCriteria": [
-        "System prompt instructs AI to output chart specs in ```chart code blocks",
-        "Chart spec: {type, title, xAxisKey, metrics: [{key, label, color?}], data: [...]}",
-        "Supported types: bar, line, area, pie, scatter, stacked-bar, composed",
-        "New component src/components/chat/chart-from-spec.tsx maps spec to Recharts",
-        "New component src/components/chat/message-renderer.tsx parses text+chart+table parts",
-        "Install react-markdown and remark-gfm for text rendering",
-        "Charts use dark theme (amber/blue/green palette, slate backgrounds)",
-        "Charts responsive: fill width, 300px height",
-        "Typecheck passes",
-        "Verify in browser"
+        "POST /api/custom-dashboards \u2014 creates dashboard, body { projectId, name, description? }, validates project belongs to user and is active, returns { id, name, description, projectId, status, createdAt }",
+        "GET /api/custom-dashboards?projectId=xxx \u2014 returns user's active dashboards, optional projectId filter, each includes widgetCount, ordered by updatedAt desc",
+        "GET /api/custom-dashboards/[id] \u2014 returns dashboard with widgets array (ordered by sortOrder asc), validates ownership, 404 if not found or archived",
+        "DELETE /api/custom-dashboards/[id] \u2014 sets status to 'archived', returns { success: true }",
+        "All endpoints require auth (401 for unauth, 404 for not found, 400 for bad input)",
+        "Typecheck passes"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Parse content with regex: /```chart\\n([\\s\\S]*?)```/g. Recharts components: BarChart, LineChart, AreaChart, PieChart, ScatterChart, ComposedChart. All need 'use client'."
+      "notes": "Create: src/app/api/custom-dashboards/route.ts (GET+POST), src/app/api/custom-dashboards/[id]/route.ts (GET+DELETE). Follow auth pattern: auth() \u2192 resolveAppUserId(). widgetCount via subquery or separate count query."
     },
     {
-      "id": "US-108",
-      "title": "Chat polish — tables, KPI badges, error handling",
-      "description": "As a user, I want tables and KPIs in chat, plus graceful error handling.",
+      "id": "US-008",
+      "title": "Dashboard widgets CRUD API",
+      "description": "As a user, I need API endpoints to add, update, and remove widgets from a custom dashboard.",
       "acceptanceCriteria": [
-        "AI can output ```table blocks: {headers: string[], rows: string[][]}",
-        "AI can output ```kpi blocks: {items: [{label, value, trend?, description?}]}",
-        "message-renderer handles chart, table, kpi block types",
-        "Tables use shadcn Table component with dark styling",
-        "KPI rendered as horizontal badge row",
-        "Malformed JSON in blocks falls back to plain code display",
-        "Error messages shown in chat on API failure",
-        "Clear chat button to reset conversation",
-        "Typecheck passes",
-        "Verify in browser"
+        "POST /api/custom-dashboards/[id]/widgets \u2014 adds widget, body { widgetType, title, config, sortOrder? }, validates dashboard ownership, returns widget object with id",
+        "PATCH /api/custom-dashboards/[id]/widgets/[widgetId] \u2014 updates widget title/config/sortOrder, validates ownership chain (widget\u2192dashboard\u2192user)",
+        "DELETE /api/custom-dashboards/[id]/widgets/[widgetId] \u2014 deletes widget row, validates ownership",
+        "POST /api/custom-dashboards/[id]/widgets/reorder \u2014 body { widgetIds: string[] }, updates sortOrder for each widget to match array index, validates all widgetIds belong to dashboard",
+        "All endpoints: 401 unauth, 404 not found, 400 bad input",
+        "Typecheck passes"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Reuse existing Table from src/components/ui/table.tsx. KPI badges similar to src/components/charts/evm-kpi-badges.tsx style."
+      "notes": "Create: src/app/api/custom-dashboards/[id]/widgets/route.ts (GET implicit via parent, POST+reorder), src/app/api/custom-dashboards/[id]/widgets/[widgetId]/route.ts (PATCH+DELETE). Config is opaque JSONB \u2014 store whatever the AI produces."
     },
     {
-      "id": "US-109",
-      "title": "End-to-end demo flow with sample data",
-      "description": "As a hackathon judge, I want to see the complete upload→chat→chart flow work.",
+      "id": "US-009",
+      "title": "Custom dashboards list UI under project detail",
+      "description": "As a user, I want to see and create custom dashboards from the project detail page.",
       "acceptanceCriteria": [
-        "demo-data/pm-projects.csv created: 6 projects with name, type, status, city, dates, contract_value, percent_complete",
-        "demo-data/erp-financials.csv created: financial data with budget, actual_cost, committed, labor, material, subcontract costs",
-        "Both files uploadable via Data Sources page",
-        "Chat correctly answers: 'What data do I have?'",
-        "Chat correctly answers: 'Which project has the highest contract value?'",
-        "Chat produces bar chart for: 'Show budget vs actual cost chart'",
-        "Chat produces table for: 'Calculate cost variance for each project'",
+        "/projects/[id] page gains a Custom Dashboards section below the AI-generated dashboard content",
+        "Section header: 'Custom Dashboards' with a 'Create Dashboard' button",
+        "Fetches dashboards from GET /api/custom-dashboards?projectId=[id] on mount",
+        "Displays dashboard cards showing: name, widget count, formatted updated date",
+        "Create Dashboard button opens shadcn Dialog with name (required) and description (optional) fields",
+        "Submitting dialog calls POST /api/custom-dashboards with projectId and refreshes list",
+        "Each dashboard card is a Link to /projects/[id]/dashboards/[dashboardId]",
+        "Empty state message when no custom dashboards exist",
         "Typecheck passes",
         "Verify in browser"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": "This is the integration test story. Ensure dev server is running, upload files, then test chat interactions via browser. Demo data should have realistic construction values ($10M-$70M range)."
+      "passes": true,
+      "notes": "The current /projects/[id]/page.tsx renders an AI-generated project-controls dashboard. Add the custom dashboards section below it as a separate client component. Fetch dashboards client-side via useEffect + fetch."
+    },
+    {
+      "id": "US-010",
+      "title": "Custom dashboard canvas page with widget rendering",
+      "description": "As a user, I want to view a custom dashboard that renders its saved widgets in a grid.",
+      "acceptanceCriteria": [
+        "New page: src/app/(dashboard)/projects/[id]/dashboards/[dashboardId]/page.tsx",
+        "Server component fetches dashboard + widgets via GET /api/custom-dashboards/[dashboardId]",
+        "Renders header: dashboard name, breadcrumb (Projects \u2192 Project Name \u2192 Dashboard Name), action buttons",
+        "KPI widgets (widgetType='kpi') render as styled cards (same DynamicKPICard style)",
+        "Chart widgets (widgetType='chart') render as cards with DynamicChart + Chart/Table tabs",
+        "Widgets ordered by sortOrder in responsive grid: 2-col desktop, 1-col mobile",
+        "Empty state: 'Start building your dashboard using the AI assistant' with button to open chat panel",
+        "Delete widget button on each widget card (calls DELETE endpoint, removes from grid)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "The dashboard canvas is a client component that receives server-fetched initial data. Widget rendering reuses DynamicChart from src/components/charts/dynamic-chart.tsx for chart type and the KPI card pattern from dashboard-client.tsx. The chart/table tabs pattern from US-005 should be reusable here."
+    },
+    {
+      "id": "US-011",
+      "title": "Dashboard sidebar AI chat panel",
+      "description": "As a user, I want a slide-out AI chat panel on the custom dashboard page to create widgets by conversation.",
+      "acceptanceCriteria": [
+        "Custom dashboard page has an 'AI Assistant' toggle button in the header area",
+        "Clicking opens a shadcn Sheet (side='right', width ~400px) with: chat message list, composer input",
+        "Chat uses useChat from ai/react connected to POST /api/custom-dashboards/[id]/chat",
+        "Chat endpoint: requires auth, validates dashboard ownership, uses streamText with Mistral",
+        "Chat system prompt is DASHBOARD_BUILDER_PROMPT (new file: src/app/api/custom-dashboards/_lib/builder-prompt.ts)",
+        "Builder prompt instructs AI to generate one chart or KPI at a time using ```chart / ```kpi format, use the dashboard project's datasets",
+        "Data tools (listDatasets, getDatasetSchema, queryDatasetRows, aggregateColumn, searchDatasets) scoped to the dashboard's projectId",
+        "Messages rendered with MessageRenderer (reuses existing component from src/components/chat/message-renderer.tsx)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Create: src/app/api/custom-dashboards/[id]/chat/route.ts for the streaming chat endpoint. Reuse createDataTools from src/app/api/chat/_lib/data-tools.ts with the dashboard's projectId. The Sheet component is at src/components/ui/sheet.tsx. The builder prompt should be simpler than the main chat prompt \u2014 focus on generating individual widgets."
+    },
+    {
+      "id": "US-012",
+      "title": "Add-to-Dashboard button on chat-generated widgets",
+      "description": "As a user, I want to click 'Add to Dashboard' on AI-generated charts/KPIs in the sidebar chat to pin them to my dashboard.",
+      "acceptanceCriteria": [
+        "Chart blocks and KPI blocks in the dashboard sidebar chat show an 'Add to Dashboard' button (lucide Plus icon + text)",
+        "Clicking the button calls POST /api/custom-dashboards/[id]/widgets with: widgetType ('chart' or 'kpi'), title (from chart title or kpi label), config (full parsed spec JSON)",
+        "After successful add, widget appears in the main dashboard grid (refetch or optimistic insert)",
+        "Button shows loading spinner during API call, success checkmark briefly after",
+        "Button disabled after widget is added (prevents duplicate adds) \u2014 shows 'Added \u2713'",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "This requires a modified MessageRenderer (or wrapper) for the dashboard chat that adds the 'Add to Dashboard' button on chart/kpi blocks. Use a callback prop pattern: the dashboard page passes an onAddWidget callback to the chat panel, which passes it to the renderer. The renderer calls it with the parsed spec when user clicks Add."
+    },
+    {
+      "id": "US-013",
+      "title": "Dashboard refresh \u2014 regenerate widgets with latest data",
+      "description": "As a user, I want to click Refresh to update all dashboard widgets with the latest uploaded data.",
+      "acceptanceCriteria": [
+        "Refresh button in dashboard header triggers POST /api/custom-dashboards/[id]/refresh",
+        "Refresh endpoint: fetches dashboard's project datasets, for each widget calls LLM with widget title as context + dataset data, updates widget config in DB",
+        "LLM call uses a refresh-specific prompt: 'Regenerate this chart/KPI with the latest data. Original title: [title]. Original type: [widgetType]. Maintain the same analytical focus but use current data.'",
+        "Uses shared fetchUserDatasets and callDashboardLLM from src/lib/dashboard/generate.ts",
+        "Frontend shows loading skeleton per-widget during refresh (individual widget loading states)",
+        "Failed widget refreshes show error state on that widget but don't block others",
+        "Widget sortOrder and titles preserved after refresh",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Create src/app/api/custom-dashboards/[id]/refresh/route.ts. Process widgets sequentially or in parallel (Promise.allSettled). Each widget gets a mini-prompt: system prompt for single chart generation + user prompt with title and dataset context. Parse LLM response and update config JSONB. Return { refreshed: number, failed: number }."
+    },
+    {
+      "id": "US-014",
+      "title": "Navigation integration and My Dashboards page",
+      "description": "As a user, I want custom dashboards accessible from the sidebar and a dedicated listing page.",
+      "acceptanceCriteria": [
+        "Sidebar nav gains 'My Dashboards' link (lucide LayoutGrid icon) between Projects and Financials",
+        "New page /dashboards/page.tsx lists all user's custom dashboards across all projects",
+        "Each card shows: dashboard name, project name (fetched/joined), widget count, last updated date",
+        "Cards link to /projects/[projectId]/dashboards/[dashboardId]",
+        "Empty state with 'Create your first dashboard from a Project page' message",
+        "Breadcrumbs on dashboard canvas page: Projects \u2192 [Project Name] \u2192 [Dashboard Name]",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Modify src/components/layout/sidebar.tsx to add the nav item. Create src/app/(dashboard)/dashboards/page.tsx. The list endpoint GET /api/custom-dashboards (no projectId filter) returns all dashboards \u2014 need to join project name. Add Breadcrumb component if not present, or use simple link chain."
     }
   ]
 }

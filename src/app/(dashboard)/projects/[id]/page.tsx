@@ -1,74 +1,29 @@
-import { CostBreakdownChart } from "@/components/charts/cost-breakdown-chart";
-import { EVMChart } from "@/components/charts/evm-chart";
-import { EVMKpiBadges } from "@/components/charts/evm-kpi-badges";
-import { Badge } from "@/components/ui/badge";
+import { auth } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
+import Link from "next/link";
+
+import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { db } from "@/lib/db";
+import { resolveAppUserId } from "@/lib/db/app-user";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { MockDataProvider } from "@/lib/data";
-import { cn } from "@/lib/utils";
+  buildDashboardCacheKey,
+  buildDashboardDataVersion,
+} from "@/lib/dashboard/types";
+import { projects, uploadedDatasets } from "@/lib/db/schema";
+import { CustomDashboardsSection } from "./custom-dashboards-section";
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-function formatDate(value: string): string {
-  const parsedDate = new Date(`${value}T00:00:00Z`);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return value;
-  }
-
-  return dateFormatter.format(parsedDate);
-}
-
-function DataSourceBadge({ source }: { source: "Procore" | "Sage Intacct" }) {
-  const isProcore = source === "Procore";
-
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "rounded-md px-2 py-0.5 text-[11px] uppercase tracking-wide",
-        isProcore
-          ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-      )}
-    >
-      {source}
-    </Badge>
-  );
-}
-
-export default async function ProjectDetailPage({
+export default async function ProjectDashboardPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const dataProvider = new MockDataProvider();
+  const { userId } = await auth();
 
-  const [project, financials, costBreakdown, evmData] = await Promise.all([
-    dataProvider.getProjectById(id),
-    dataProvider.getProjectFinancials(id),
-    dataProvider.getCostBreakdown(id),
-    dataProvider.getEVMData(id),
-  ]);
-
-  if (!project || !financials || !costBreakdown) {
+  if (!userId) {
     return (
       <Card className="border-border/70 bg-card shadow-sm">
         <CardContent className="py-12 text-center text-muted-foreground">
@@ -78,129 +33,107 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const progress = Math.max(0, Math.min(100, project.percentComplete));
+  const appUserId = await resolveAppUserId(userId);
+
+  if (!appUserId) {
+    return (
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="py-12 text-center text-muted-foreground">
+          Project not found
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const [project] = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      description: projects.description,
+    })
+    .from(projects)
+    .where(and(eq(projects.id, id), eq(projects.userId, appUserId)))
+    .limit(1);
+
+  if (!project) {
+    return (
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="py-12 text-center text-muted-foreground">
+          Project not found
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const activeDatasets = await db
+    .select({
+      id: uploadedDatasets.id,
+      uploadedAt: uploadedDatasets.uploadedAt,
+    })
+    .from(uploadedDatasets)
+    .where(
+      and(
+        eq(uploadedDatasets.userId, appUserId),
+        eq(uploadedDatasets.projectId, id),
+        eq(uploadedDatasets.isActive, true),
+      ),
+    );
+
+  const activeDatasetCount = activeDatasets.length;
+
+  if (activeDatasetCount === 0) {
+    return (
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+          <div className="space-y-2">
+            <h2 className="text-lg font-medium text-foreground">
+              No active datasets for this project
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Upload project datasets to generate the AI project controls dashboard.
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/data-sources">Go to Data Sources</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const cacheKey = buildDashboardCacheKey({
+    variant: "project-controls",
+    projectId: project.id,
+    dataVersion: buildDashboardDataVersion(activeDatasets),
+  });
 
   return (
     <div className="space-y-6">
-      <Card className="border-border/70 bg-card/90 shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-xl text-foreground">{project.name}</CardTitle>
-              <CardDescription className="mt-1 text-muted-foreground">
-                {project.type} project in {project.city}, {project.state}
-              </CardDescription>
-            </div>
-            <DataSourceBadge source="Procore" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid grid-cols-4 gap-4 text-sm max-xl:grid-cols-2 max-sm:grid-cols-1">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Project Type</p>
-              <p className="mt-1 text-foreground">{project.type}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Location</p>
-              <p className="mt-1 text-foreground">
-                {project.city}, {project.state}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Start Date</p>
-              <p className="mt-1 text-foreground">{formatDate(project.startDate)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Completion Date</p>
-              <p className="mt-1 text-foreground">{formatDate(project.completionDate)}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm max-md:grid-cols-1">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Value</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
-                {currencyFormatter.format(project.totalValue)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Revised Contract Value
-              </p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
-                {currencyFormatter.format(financials.revisedContractAmount)}
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Percent Complete</span>
-              <span className="font-medium text-foreground">{progress}%</span>
-            </div>
-            <div className="h-2.5 w-full rounded-full bg-muted">
-              <div className="h-2.5 rounded-full bg-amber-500" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PageHeader
+        eyebrow="Project Controls Dashboard"
+        title={project.name}
+        description={
+          project.description?.trim()
+            ? project.description.trim()
+            : `AI-generated controls insights from ${activeDatasetCount} active dataset${
+                activeDatasetCount === 1 ? "" : "s"
+              }.`
+        }
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/data-sources">Manage Data Sources</Link>
+          </Button>
+        }
+      />
 
-      <Card className="border-border/70 bg-card/90 shadow-sm">
-        <CardHeader className="pb-2">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-foreground">EVM KPI Summary</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Calculated from the latest monthly EVM data point
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <DataSourceBadge source="Procore" />
-              <DataSourceBadge source="Sage Intacct" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <EVMKpiBadges data={evmData} />
-        </CardContent>
-      </Card>
+      <DashboardClient
+        datasetIds={activeDatasets.map((dataset) => dataset.id)}
+        cacheKey={cacheKey}
+        projectId={project.id}
+        variant="project-controls"
+      />
 
-      <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-        <Card className="border-border/70 bg-card/90 shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-foreground">Cost Breakdown</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Budget vs actual vs committed by category
-                </CardDescription>
-              </div>
-              <DataSourceBadge source="Sage Intacct" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <CostBreakdownChart data={costBreakdown} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 bg-card/90 shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-foreground">EVM Trend</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Planned value, earned value, and actual cost over 2025
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <DataSourceBadge source="Procore" />
-                <DataSourceBadge source="Sage Intacct" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <EVMChart data={evmData} />
-          </CardContent>
-        </Card>
-      </div>
+      <CustomDashboardsSection projectId={project.id} />
     </div>
   );
 }

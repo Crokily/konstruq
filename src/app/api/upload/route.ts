@@ -1,13 +1,15 @@
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
 import { db } from "@/lib/db";
-import { uploadedDatasets, users } from "@/lib/db/schema";
+import { projects, uploadedDatasets, users } from "@/lib/db/schema";
 
-type UploadCategory = "pm" | "erp";
+type UploadCategory = "pm" | "erp" | "uploaded";
+
+const DEFAULT_UPLOAD_CATEGORY: UploadCategory = "uploaded";
 
 interface ParsedSheet {
   sheetName: string;
@@ -19,7 +21,11 @@ interface ParsedSheet {
 function normalizeCategory(value: string): UploadCategory | null {
   const normalized = value.trim().toLowerCase();
 
-  if (normalized === "pm" || normalized === "erp") {
+  if (
+    normalized === "pm" ||
+    normalized === "erp" ||
+    normalized === DEFAULT_UPLOAD_CATEGORY
+  ) {
     return normalized;
   }
 
@@ -106,23 +112,40 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const fileInput = formData.get("file");
     const categoryInput = formData.get("category");
+    const projectIdInput = formData.get("projectId");
 
     if (!(fileInput instanceof File)) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    if (typeof categoryInput !== "string") {
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+    if (typeof projectIdInput !== "string" || projectIdInput.trim().length === 0) {
+      return NextResponse.json({ error: "Project ID is required" }, { status: 400 });
     }
 
-    const category = normalizeCategory(categoryInput);
+    const projectId = projectIdInput.trim();
+    const [project] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.userId, appUser.id),
+          ne(projects.status, "archived"),
+        ),
+      )
+      .limit(1);
 
-    if (!category) {
+    if (!project) {
       return NextResponse.json(
-        { error: "Category must be one of: pm, erp" },
-        { status: 400 },
+        { error: "Project not found or does not belong to user" },
+        { status: 404 },
       );
     }
+
+    const category =
+      typeof categoryInput === "string"
+        ? normalizeCategory(categoryInput) ?? DEFAULT_UPLOAD_CATEGORY
+        : DEFAULT_UPLOAD_CATEGORY;
 
     const fileName = fileInput.name;
     const normalizedFileName = fileName.toLowerCase();
@@ -154,6 +177,7 @@ export async function POST(request: NextRequest) {
       .insert(uploadedDatasets)
       .values({
         userId: appUser.id,
+        projectId,
         category,
         fileName,
         sheets,
@@ -175,6 +199,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       id: createdDataset.id,
+      projectId,
       fileName,
       category,
       sheets: sheets.map(({ sheetName, columns, rowCount }) => ({

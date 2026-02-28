@@ -1,5 +1,9 @@
 import { AlertCircle, Loader2, RotateCcw } from "lucide-react";
-import { MessageRenderer } from "@/components/chat/message-renderer";
+import {
+  MessageRenderer,
+  type MessageWidgetAddRequest,
+  type MessageWidgetAddState,
+} from "@/components/chat/message-renderer";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -14,7 +18,10 @@ interface ChatThreadProps {
   error: Error | undefined;
   onRetry: () => void;
   suggestions: readonly string[];
+  loadingLabel?: string;
   onSuggestionClick: (suggestion: string) => void;
+  onAddWidget?: (widget: MessageWidgetAddRequest) => void | Promise<void>;
+  getAddWidgetState?: (blockKey: string) => MessageWidgetAddState;
 }
 
 export function ChatThread({
@@ -23,7 +30,10 @@ export function ChatThread({
   error,
   onRetry,
   suggestions,
+  loadingLabel = "Generating...",
   onSuggestionClick,
+  onAddWidget,
+  getAddWidgetState,
 }: ChatThreadProps) {
   if (messages.length === 0) {
     return (
@@ -67,7 +77,15 @@ export function ChatThread({
                       : "overflow-hidden border border-border bg-muted text-foreground",
                   )}
                 >
-                  {isUser ? <>{message.content}</> : <MessageRenderer content={String(message.content)} />}
+                  {isUser ? (
+                    <>{message.content}</>
+                  ) : (
+                    <MessageRenderer
+                      content={String(message.content)}
+                      onAddWidget={onAddWidget}
+                      getAddWidgetState={getAddWidgetState}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -80,7 +98,7 @@ export function ChatThread({
               <p className="text-xs font-medium text-muted-foreground">Konstruq AI</p>
               <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm text-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500" />
-                <span className="text-xs text-muted-foreground">Generating...</span>
+                <span className="text-xs text-muted-foreground">{loadingLabel}</span>
               </div>
             </div>
           </div>

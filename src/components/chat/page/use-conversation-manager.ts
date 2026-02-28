@@ -9,6 +9,7 @@ import {
   parseConversationHistory,
   toStoredMessages,
 } from "@/lib/chat/history";
+import { useChatProject } from "@/lib/chat/project-context";
 
 interface UseConversationManagerParams {
   messages: Message[];
@@ -20,6 +21,7 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const projectId = useChatProject((state) => state.projectId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -122,7 +124,10 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
       return;
     }
 
-    const conversation = defaultConversation();
+    const conversation = {
+      ...defaultConversation(),
+      projectId: projectId || undefined,
+    };
     setConversations((prev) => [conversation, ...prev]);
     setActiveConversationId(conversation.id);
     setMessages([]);
@@ -144,9 +149,11 @@ export function useConversationManager({ messages, isLoading, setMessages }: Use
 
   const deleteConversation = (conversationId: string) => {
     const remaining = conversations.filter((conversation) => conversation.id !== conversationId);
-
     if (remaining.length === 0) {
-      const initial = defaultConversation();
+      const initial = {
+        ...defaultConversation(),
+        projectId: projectId || undefined,
+      };
       setConversations([initial]);
       setActiveConversationId(initial.id);
       setMessages([]);

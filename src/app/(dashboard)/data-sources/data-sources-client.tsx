@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FileSpreadsheet, Loader2, Trash2, Upload } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DASHBOARD_STORAGE_KEY } from "@/lib/dashboard/types";
 
-export type DatasetCategory = "pm" | "erp";
+export type DatasetCategory = "pm" | "erp" | "uploaded";
 
 export interface DatasetSheet {
   sheetName: string;
@@ -26,10 +35,18 @@ export interface DatasetItem {
   fileName: string;
   sheets: DatasetSheet[];
   uploadedAt: string;
+  projectId?: string;
+  projectName?: string;
+}
+
+export interface ProjectOption {
+  id: string;
+  name: string;
 }
 
 interface DataSourcesClientProps {
   initialDatasets: DatasetItem[];
+  projects: ProjectOption[];
 }
 
 interface UploadResponse {
@@ -37,6 +54,7 @@ interface UploadResponse {
   fileName?: string;
   category?: string;
   sheets?: unknown;
+  projectId?: string;
   error?: string;
 }
 
@@ -47,7 +65,7 @@ interface DeleteResponse {
 
 type StatusType = "idle" | "success" | "error";
 
-interface CategoryStatus {
+interface UploadStatus {
   type: StatusType;
   message: string;
 }
@@ -57,35 +75,21 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeStyle: "short",
 });
 
-const initialStatus: Record<DatasetCategory, CategoryStatus> = {
-  pm: { type: "idle", message: "" },
-  erp: { type: "idle", message: "" },
-};
+const DEFAULT_DATASET_CATEGORY: DatasetCategory = "uploaded";
+const initialStatus: UploadStatus = { type: "idle", message: "" };
 
-const sectionContent: Record<
-  DatasetCategory,
-  { title: string; description: string; emptyMessage: string }
-> = {
-  pm: {
-    title: "PM Data (Project Management)",
-    description: "Upload schedule, activity, and project operations datasets.",
-    emptyMessage: "No PM files uploaded yet.",
-  },
-  erp: {
-    title: "ERP Data (Financial)",
-    description: "Upload accounting, cost, and financial performance datasets.",
-    emptyMessage: "No ERP files uploaded yet.",
-  },
-};
-
-function normalizeCategory(value: string): DatasetCategory | null {
+function normalizeCategory(value: string): DatasetCategory {
   const normalized = value.trim().toLowerCase();
 
-  if (normalized === "pm" || normalized === "erp") {
+  if (
+    normalized === "pm" ||
+    normalized === "erp" ||
+    normalized === DEFAULT_DATASET_CATEGORY
+  ) {
     return normalized;
   }
 
-  return null;
+  return DEFAULT_DATASET_CATEGORY;
 }
 
 function normalizeSheets(value: unknown): DatasetSheet[] {
@@ -146,35 +150,44 @@ function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
+function clearDashboardCache() {
+  window.localStorage.removeItem(DASHBOARD_STORAGE_KEY);
+}
+
+export function DataSourcesClient({
+  initialDatasets,
+  projects,
+}: DataSourcesClientProps) {
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [datasets, setDatasets] = useState<DatasetItem[]>(() =>
     sortDatasets(initialDatasets),
   );
-  const [uploading, setUploading] = useState<Record<DatasetCategory, boolean>>({
-    pm: false,
-    erp: false,
-  });
+  const [uploading, setUploading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
-  const [status, setStatus] = useState<Record<DatasetCategory, CategoryStatus>>(
-    initialStatus,
+  const [status, setStatus] = useState<UploadStatus>(initialStatus);
+  const projectNameById = useMemo(
+    () => new Map(projects.map((project) => [project.id, project.name])),
+    [projects],
   );
 
-  const pmInputRef = useRef<HTMLInputElement>(null);
-  const erpInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const datasetsByCategory: Record<DatasetCategory, DatasetItem[]> = {
-    pm: datasets.filter((dataset) => dataset.category === "pm"),
-    erp: datasets.filter((dataset) => dataset.category === "erp"),
-  };
+  async function uploadFile(file: File, projectId: string) {
+    if (projectId.trim().length === 0) {
+      setStatus({
+        type: "error",
+        message: "Select a project before uploading a file.",
+      });
+      return;
+    }
 
-  async function uploadFile(category: DatasetCategory, file: File) {
-    setUploading((prev) => ({ ...prev, [category]: true }));
-    setStatus((prev) => ({ ...prev, [category]: { type: "idle", message: "" } }));
+    setUploading(true);
+    setStatus(initialStatus);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("category", category);
+      formData.append("projectId", projectId);
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -191,16 +204,22 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
         throw new Error("Upload response did not include dataset id");
       }
 
-      const createdCategory =
-        (typeof payload.category === "string" && normalizeCategory(payload.category)) ||
-        category;
+      const uploadedProjectId =
+        typeof payload.projectId === "string" && payload.projectId.length > 0
+          ? payload.projectId
+          : projectId;
 
       const nextDataset: DatasetItem = {
         id: payload.id,
-        category: createdCategory,
+        category:
+          typeof payload.category === "string"
+            ? normalizeCategory(payload.category)
+            : DEFAULT_DATASET_CATEGORY,
         fileName: typeof payload.fileName === "string" ? payload.fileName : file.name,
         sheets: normalizeSheets(payload.sheets),
         uploadedAt: new Date().toISOString(),
+        projectId: uploadedProjectId,
+        projectName: projectNameById.get(uploadedProjectId),
       };
 
       setDatasets((prev) =>
@@ -209,30 +228,22 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
           ...prev.filter((dataset) => dataset.id !== nextDataset.id),
         ]),
       );
+      clearDashboardCache();
 
-      setStatus((prev) => ({
-        ...prev,
-        [category]: {
-          type: "success",
-          message: `${nextDataset.fileName} uploaded successfully.`,
-        },
-      }));
+      setStatus({
+        type: "success",
+        message: `${nextDataset.fileName} uploaded successfully.`,
+      });
     } catch (error) {
-      setStatus((prev) => ({
-        ...prev,
-        [category]: { type: "error", message: errorMessage(error) },
-      }));
+      setStatus({ type: "error", message: errorMessage(error) });
     } finally {
-      setUploading((prev) => ({ ...prev, [category]: false }));
+      setUploading(false);
     }
   }
 
   async function handleDelete(dataset: DatasetItem) {
     setDeletingIds((prev) => (prev.includes(dataset.id) ? prev : [...prev, dataset.id]));
-    setStatus((prev) => ({
-      ...prev,
-      [dataset.category]: { type: "idle", message: "" },
-    }));
+    setStatus(initialStatus);
 
     try {
       const response = await fetch(`/api/upload/${dataset.id}`, {
@@ -246,36 +257,27 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
       }
 
       setDatasets((prev) => prev.filter((item) => item.id !== dataset.id));
-      setStatus((prev) => ({
-        ...prev,
-        [dataset.category]: {
-          type: "success",
-          message: `${dataset.fileName} deleted.`,
-        },
-      }));
+      clearDashboardCache();
+      setStatus({
+        type: "success",
+        message: `${dataset.fileName} deleted.`,
+      });
     } catch (error) {
-      setStatus((prev) => ({
-        ...prev,
-        [dataset.category]: { type: "error", message: errorMessage(error) },
-      }));
+      setStatus({ type: "error", message: errorMessage(error) });
     } finally {
       setDeletingIds((prev) => prev.filter((id) => id !== dataset.id));
     }
   }
 
-  function openFilePicker(category: DatasetCategory) {
-    if (uploading[category]) {
+  function openFilePicker() {
+    if (uploading || selectedProjectId.trim().length === 0) {
       return;
     }
 
-    const inputRef = category === "pm" ? pmInputRef : erpInputRef;
-    inputRef.current?.click();
+    fileInputRef.current?.click();
   }
 
-  async function onFileChange(
-    category: DatasetCategory,
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = "";
@@ -284,118 +286,136 @@ export function DataSourcesClient({ initialDatasets }: DataSourcesClientProps) {
       return;
     }
 
-    await uploadFile(category, file);
+    await uploadFile(file, selectedProjectId);
   }
 
   return (
-    <div className="space-y-6">
-      {(Object.keys(sectionContent) as DatasetCategory[]).map((category) => (
-        <Card key={category} className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle>
-              {sectionContent[category].title}
-            </CardTitle>
-            <CardDescription>
-              {sectionContent[category].description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 transition-colors hover:border-muted-foreground/40">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    Upload CSV or Excel files
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Accepted formats: .csv, .xlsx, .xls
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  onClick={() => openFilePicker(category)}
-                  disabled={uploading[category]}
-                  className="bg-amber-500 text-amber-950 hover:bg-amber-400"
-                >
-                  {uploading[category] ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  {uploading[category] ? "Uploading..." : "Upload File"}
-                </Button>
-              </div>
-              <input
-                ref={category === "pm" ? pmInputRef : erpInputRef}
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                className="hidden"
-                onChange={(event) => onFileChange(category, event)}
-              />
-            </div>
-
-            {status[category].type !== "idle" ? (
-              <p
-                className={
-                  status[category].type === "error"
-                    ? "text-sm text-red-400"
-                    : "text-sm text-emerald-400"
-                }
-              >
-                {status[category].message}
+    <Card className="border-border bg-card">
+      <CardHeader className="pb-2">
+        <CardTitle>Uploaded Files</CardTitle>
+        <CardDescription>
+          Upload CSV or Excel datasets to use in analysis.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 transition-colors hover:border-muted-foreground/40">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Upload your data files
               </p>
-            ) : null}
-
-            <div className="space-y-3">
-              {datasetsByCategory[category].length === 0 ? (
-                <p className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-                  {sectionContent[category].emptyMessage}
-                </p>
-              ) : (
-                datasetsByCategory[category].map((dataset) => {
-                  const isDeleting = deletingIds.includes(dataset.id);
-
-                  return (
-                    <div
-                      key={dataset.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-4"
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-4 w-4 text-amber-500" />
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {dataset.fileName}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <span>{dataset.sheets.length} sheets</span>
-                          <span>{totalRows(dataset.sheets).toLocaleString()} rows</span>
-                          <span>Uploaded {formatUploadedAt(dataset.uploadedAt)}</span>
-                        </div>
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(dataset)}
-                        disabled={isDeleting}
-                        className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                        Delete
-                      </Button>
-                    </div>
-                  );
-                })
-              )}
+              <p className="text-xs text-muted-foreground">
+                Accepted formats: .csv, .xlsx, .xls
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+            <div className="flex w-full flex-col gap-2 sm:w-56">
+              <Select
+                value={selectedProjectId}
+                onValueChange={setSelectedProjectId}
+                disabled={uploading || projects.length === 0}
+              >
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={openFilePicker}
+                disabled={uploading || selectedProjectId.trim().length === 0}
+                className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400"
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploading ? "Uploading..." : "Upload File"}
+              </Button>
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            className="hidden"
+            onChange={onFileChange}
+          />
+        </div>
+
+        {status.type !== "idle" ? (
+          <p
+            className={
+              status.type === "error"
+                ? "text-sm text-red-400"
+                : "text-sm text-emerald-400"
+            }
+          >
+            {status.message}
+          </p>
+        ) : null}
+
+        <div className="space-y-3">
+          {datasets.length === 0 ? (
+            <p className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+              No files uploaded yet.
+            </p>
+          ) : (
+            datasets.map((dataset) => {
+              const isDeleting = deletingIds.includes(dataset.id);
+
+              return (
+                <div
+                  key={dataset.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-4"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-amber-500" />
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                        {dataset.fileName}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 text-xs text-muted-foreground"
+                      >
+                        {dataset.projectName ?? "Unknown project"}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>{dataset.sheets.length} sheets</span>
+                      <span>{totalRows(dataset.sheets).toLocaleString()} rows</span>
+                      <span>Uploaded {formatUploadedAt(dataset.uploadedAt)}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(dataset)}
+                    disabled={isDeleting}
+                    className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete
+                  </Button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

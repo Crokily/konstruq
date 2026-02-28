@@ -2,17 +2,39 @@
 
 import { MessageSquarePlus, Trash2 } from "lucide-react";
 import type { Message } from "ai";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useChatRuntime } from "@/components/chat/chat-runtime-provider";
 import { ChatComposer } from "@/components/chat/page/chat-composer";
 import { ConversationSidebar } from "@/components/chat/page/conversation-sidebar";
 import { ChatThread } from "@/components/chat/page/chat-thread";
 import { useConversationManager } from "@/components/chat/page/use-conversation-manager";
 import { SUGGESTION_PROMPTS } from "@/lib/chat/history";
+import { useChatProject } from "@/lib/chat/project-context";
+
+interface ProjectOption {
+  id: string;
+  name: string;
+}
+
+const ALL_PROJECTS_VALUE = "__all_projects__";
+
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  listDatasets: "Scanning datasets...",
+  getDatasetSchema: "Reading schema...",
+  queryDatasetRows: "Querying data...",
+  searchDatasets: "Searching datasets...",
+  aggregateColumn: "Calculating aggregates...",
+};
 
 export default function ChatPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading, append, error, reload, setMessages } =
     useChatRuntime();
+  const projectId = useChatProject((state) => state.projectId);
+  const setProjectId = useChatProject((state) => state.setProjectId);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
   const {
     activeConversation,
     activeConversationId,
@@ -26,6 +48,56 @@ export default function ChatPage() {
     scrollContainerRef,
     switchConversation,
   } = useConversationManager({ messages, isLoading, setMessages });
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadProjects() {
+      setIsProjectsLoading(true);
+
+      try {
+        const response = await fetch("/api/projects");
+        const payload = (await response
+          .json()
+          .catch(() => null)) as Array<{ id?: unknown; name?: unknown }> | null;
+
+        if (!response.ok || !Array.isArray(payload)) {
+          return;
+        }
+
+        const options = payload
+          .map((project): ProjectOption | null => {
+            if (typeof project?.id !== "string" || typeof project?.name !== "string") {
+              return null;
+            }
+
+            return {
+              id: project.id,
+              name: project.name,
+            };
+          })
+          .filter((project): project is ProjectOption => project !== null);
+
+        if (!isCancelled) {
+          setProjects(options);
+        }
+      } catch {
+        if (!isCancelled) {
+          setProjects([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsProjectsLoading(false);
+        }
+      }
+    }
+
+    void loadProjects();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   function sanitizeStreamingAssistantContent(content: string): string {
     const completeBlocksRemoved = content.replace(/```(chart|table|kpi)\n[\s\S]*?```/g, "");
@@ -50,6 +122,21 @@ export default function ChatPage() {
     return { ...message, content: sanitized.length > 0 ? sanitized : "Generating..." };
   });
 
+  const lastAssistantMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "assistant") as
+    | ({
+        toolInvocations?: Array<{ toolName: string; state: "call" | "partial-call" | "result" }>;
+      } & (typeof messages)[number])
+    | undefined;
+  const activeTool = lastAssistantMessage?.toolInvocations?.find(
+    (tool) => tool.state === "call" || tool.state === "partial-call",
+  );
+  const loadingLabel = activeTool
+    ? TOOL_STATUS_LABELS[activeTool.toolName] ?? "Working..."
+    : "Generating...";
+  const selectedProjectValue = projectId.length > 0 ? projectId : ALL_PROJECTS_VALUE;
+
   return (
     <section className="h-[calc(100vh-9.5rem)] min-h-[560px]">
       <div className="flex h-full overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm">
@@ -63,12 +150,31 @@ export default function ChatPage() {
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-border/70 px-5 py-3">
-            <div>
+          <div className="flex flex-wrap items-center gap-3 border-b border-border/70 px-5 py-3">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground">Konstruq AI</p>
               <p className="text-xs text-muted-foreground">{activeConversation?.title ?? "New conversation"}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-56">
+              <Select
+                value={selectedProjectValue}
+                onValueChange={(value) => setProjectId(value === ALL_PROJECTS_VALUE ? "" : value)}
+                disabled={isProjectsLoading}
+              >
+                <SelectTrigger size="sm" className="w-full bg-background">
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_PROJECTS_VALUE}>All Projects</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={createConversation} disabled={isLoading} className="lg:hidden">
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 New
@@ -93,6 +199,7 @@ export default function ChatPage() {
               error={error ?? undefined}
               onRetry={() => void reload()}
               suggestions={SUGGESTION_PROMPTS}
+              loadingLabel={loadingLabel}
               onSuggestionClick={(suggestion) => void append({ role: "user", content: suggestion })}
             />
             <div ref={messagesEndRef} />
