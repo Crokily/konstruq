@@ -1,7 +1,7 @@
 import { mistral } from "@ai-sdk/mistral";
 import { auth } from "@clerk/nextjs/server";
 import { streamText, type CoreMessage } from "ai";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
@@ -9,6 +9,8 @@ import { uploadedDatasets, users } from "@/lib/db/schema";
 import { normalizeSheets, type DatasetContextItem } from "@/lib/chat/server/dataset-context";
 import { budgetMessages, latestUserTextMessage } from "@/lib/chat/server/message-budget";
 import { buildSystemPrompt } from "@/lib/chat/server/prompt-builder";
+
+const MAX_DATASETS_IN_PROMPT = 6;
 
 async function resolveAppUserId(clerkId: string): Promise<string | null> {
   let [appUser] = await db
@@ -36,7 +38,9 @@ async function loadDatasetContext(userId: string): Promise<DatasetContextItem[]>
       sheets: uploadedDatasets.sheets,
     })
     .from(uploadedDatasets)
-    .where(and(eq(uploadedDatasets.userId, userId), eq(uploadedDatasets.isActive, true)));
+    .where(and(eq(uploadedDatasets.userId, userId), eq(uploadedDatasets.isActive, true)))
+    .orderBy(desc(uploadedDatasets.uploadedAt))
+    .limit(MAX_DATASETS_IN_PROMPT);
 
   return datasets.map((dataset) => ({
     id: dataset.id,
@@ -51,6 +55,13 @@ export async function POST(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!process.env.MISTRAL_API_KEY) {
+      return NextResponse.json(
+        { error: "MISTRAL_API_KEY is not configured" },
+        { status: 500 },
+      );
     }
 
     const userId = await resolveAppUserId(clerkUserId);
@@ -70,7 +81,12 @@ export async function POST(request: NextRequest) {
       messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      getErrorMessage(error) {
+        console.error("Chat stream failed:", error);
+        return "AI response failed. Try a shorter question or upload fewer/lighter datasets.";
+      },
+    });
   } catch (error) {
     console.error("Chat route failed:", error);
     return NextResponse.json(
