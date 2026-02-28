@@ -107,7 +107,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Modify src/app/api/chat/route.ts to extract projectId from body. Modify src/app/api/chat/_lib/data-tools.ts for the tools. The projectId filter should be added to the existing 'and(...)' clauses."
     },
     {

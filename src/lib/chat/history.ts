@@ -21,6 +21,7 @@ export interface Conversation {
   createdAt: string;
   updatedAt: string;
   messages: StoredMessage[];
+  projectId?: string;
 }
 
 function createId() {
@@ -119,6 +120,10 @@ export function parseConversationHistory(raw: string | null): Conversation[] {
           createdAt: candidate.createdAt,
           updatedAt: candidate.updatedAt,
           messages: toStoredMessages(candidate.messages as Array<{ id?: string; role: string; content: string }>),
+          projectId:
+            typeof candidate.projectId === "string" && candidate.projectId.length > 0
+              ? candidate.projectId
+              : undefined,
         };
       })
       .filter((item): item is Conversation => item !== null)
