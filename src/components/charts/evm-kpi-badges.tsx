@@ -17,9 +17,9 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 });
 
 const toneClassNames: Record<Tone, string> = {
-  positive: "border-emerald-400/30 bg-emerald-500/15 text-emerald-300",
-  negative: "border-rose-400/30 bg-rose-500/15 text-rose-300",
-  neutral: "border-slate-600/50 bg-slate-800/40 text-slate-300",
+  positive: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  negative: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+  neutral: "border-border bg-muted/60 text-foreground",
 };
 
 function getMetricTone(value: number, threshold = 0): Tone {

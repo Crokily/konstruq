@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   Building2,
   Database,
@@ -61,6 +61,12 @@ const dataSources = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const accountName =
+    user?.fullName ||
+    user?.username ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "Account";
 
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-72 flex-col border-r border-border/70 bg-card lg:flex">
@@ -128,8 +134,10 @@ export function Sidebar() {
           }}
         />
         <div>
-          <p className="text-sm font-medium text-foreground">Workspace</p>
-          <p className="text-xs text-muted-foreground">Account settings</p>
+          <p className="max-w-[170px] truncate text-sm font-medium text-foreground">
+            {accountName}
+          </p>
+          <p className="text-xs text-muted-foreground">Account</p>
         </div>
       </div>
     </aside>
