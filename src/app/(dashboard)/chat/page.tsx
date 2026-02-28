@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useChat } from "ai/react";
 import {
   AlertCircle,
   Loader2,
   MessageSquarePlus,
   MoreHorizontal,
+  RotateCcw,
   Send,
   Trash2,
 } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/message-renderer";
+import { useChatRuntime } from "@/components/chat/chat-runtime-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -178,16 +179,17 @@ export default function ChatPage() {
     isLoading,
     append,
     error,
+    reload,
     setMessages,
-  } = useChat({
-    api: "/api/chat",
-  });
+  } = useChatRuntime();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string>("");
   const [isReady, setIsReady] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
 
   useEffect(() => {
     const stored = parseConversationHistory(localStorage.getItem(STORAGE_KEY));
@@ -197,16 +199,20 @@ export default function ChatPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setConversations([initial]);
       setActiveConversationId(initial.id);
-      setMessages([]);
+      if (!isLoading && messages.length === 0) {
+        setMessages([]);
+      }
     } else {
       const initial = stored[0];
       setConversations(stored);
       setActiveConversationId(initial.id);
-      setMessages(initial.messages);
+      if (!isLoading && messages.length === 0) {
+        setMessages(initial.messages);
+      }
     }
 
     setIsReady(true);
-  }, [setMessages]);
+  }, [isLoading, messages.length, setMessages]);
 
   useEffect(() => {
     if (!isReady) {
@@ -260,8 +266,23 @@ export default function ChatPage() {
   }, [activeConversationId, isReady, messages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!shouldAutoScrollRef.current) {
+      return;
+    }
+
+    messagesEndRef.current?.scrollIntoView({ behavior: isLoading ? "auto" : "smooth" });
   }, [messages, isLoading]);
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom < 120;
+  };
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeConversationId) ?? null,
@@ -344,10 +365,17 @@ export default function ChatPage() {
   };
 
   const isInputEmpty = input.trim().length === 0;
+  const streamingAssistantMessageId =
+    isLoading && messages.length > 0 && messages[messages.length - 1].role === "assistant"
+      ? messages[messages.length - 1].id
+      : null;
+  const visibleMessages = streamingAssistantMessageId
+    ? messages.filter((message) => message.id !== streamingAssistantMessageId)
+    : messages;
 
   return (
-    <section className="h-[calc(100vh-4rem)]">
-      <div className="flex h-full overflow-hidden rounded-xl border border-border bg-card">
+    <section className="h-[calc(100vh-9.5rem)] min-h-[560px]">
+      <div className="flex h-full overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-sm">
         <aside className="hidden w-80 shrink-0 border-r border-border bg-muted/20 lg:flex lg:flex-col">
           <div className="border-b border-border px-4 py-4">
             <Button
@@ -407,7 +435,7 @@ export default function ChatPage() {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <div className="flex items-center justify-between border-b border-border/70 px-5 py-3">
             <div>
               <p className="text-sm font-medium text-foreground">Konstruq AI</p>
               <p className="text-xs text-muted-foreground">
@@ -439,8 +467,12 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
-            {messages.length === 0 ? (
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-5 py-6 sm:px-6"
+          >
+            {visibleMessages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                   Konstruq AI Assistant
@@ -465,7 +497,7 @@ export default function ChatPage() {
               </div>
             ) : (
               <div className="space-y-5">
-                {messages.map((message) => {
+                {visibleMessages.map((message) => {
                   const isUser = message.role === "user";
 
                   return (
@@ -499,8 +531,8 @@ export default function ChatPage() {
                     <div className="max-w-[80%] space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Konstruq AI</p>
                       <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm text-foreground">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-                        <span className="text-xs text-muted-foreground">Thinking...</span>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500" />
+                        <span className="text-xs text-muted-foreground">Generating...</span>
                       </div>
                     </div>
                   </div>
@@ -518,6 +550,14 @@ export default function ChatPage() {
                       {error.message ? (
                         <p className="mt-1 text-xs text-rose-400/70">{error.message}</p>
                       ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void reload()}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-rose-300/30 px-2.5 py-1.5 text-xs text-rose-100 transition hover:bg-rose-500/20"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Retry
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -527,7 +567,7 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="shrink-0 border-t border-border bg-card px-4 py-4 sm:px-6">
+          <div className="shrink-0 border-t border-border/70 bg-card px-4 py-4 sm:px-6">
             <form onSubmit={handleSubmit} className="flex items-center gap-3">
               <input
                 name="prompt"

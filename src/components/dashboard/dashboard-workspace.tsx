@@ -1,7 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { Building2, CalendarDays, Database, LayoutGrid, ShieldCheck } from "lucide-react";
+import { Building2, CalendarDays, Database, LayoutGrid, Loader2, ShieldCheck } from "lucide-react";
 import type {
   PortfolioKPIs,
   ProjectHealthMatrixItem,
@@ -9,10 +10,6 @@ import type {
   UnifiedProject,
 } from "@/lib/data";
 import { KPICards } from "@/components/charts/kpi-cards";
-import { ProjectHealthScatter } from "@/components/charts/project-health-scatter";
-import { ProjectStatusChart } from "@/components/charts/project-status-chart";
-import { ProjectTable } from "@/components/charts/project-table";
-import { RevenueExpenseChart } from "@/components/charts/revenue-expense-chart";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -28,6 +25,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const ChartFallback = () => (
+  <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+    Loading chart...
+  </div>
+);
+
+const ProjectHealthScatter = dynamic(
+  () => import("@/components/charts/project-health-scatter").then((mod) => mod.ProjectHealthScatter),
+  { ssr: false, loading: () => <ChartFallback /> }
+);
+const ProjectStatusChart = dynamic(
+  () => import("@/components/charts/project-status-chart").then((mod) => mod.ProjectStatusChart),
+  { ssr: false, loading: () => <ChartFallback /> }
+);
+const ProjectTable = dynamic(
+  () => import("@/components/charts/project-table").then((mod) => mod.ProjectTable),
+  { ssr: false, loading: () => <ChartFallback /> }
+);
+const RevenueExpenseChart = dynamic(
+  () => import("@/components/charts/revenue-expense-chart").then((mod) => mod.RevenueExpenseChart),
+  { ssr: false, loading: () => <ChartFallback /> }
+);
 
 type DashboardTemplate = "executive" | "delivery" | "finance";
 export type DatasetCategory = "pm" | "erp";
@@ -141,11 +162,11 @@ export function DashboardWorkspace({
 
   return (
     <div className="space-y-6">
-      <Card className="border-border bg-card">
+      <Card className="border-border/70 bg-card/85 shadow-sm">
         <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Dashboard Workspace</p>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Dashboard Workspace</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {templateMeta[template].label}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -155,7 +176,7 @@ export function DashboardWorkspace({
 
           <div className="flex flex-wrap items-center gap-3">
             <Select value={template} onValueChange={(value) => setTemplate(value as DashboardTemplate)}>
-              <SelectTrigger className="w-[220px]">
+              <SelectTrigger className="w-[240px] border-border/70 bg-background/90">
                 <LayoutGrid className="h-4 w-4" />
                 <SelectValue placeholder="Select dashboard" />
               </SelectTrigger>
@@ -166,7 +187,7 @@ export function DashboardWorkspace({
               </SelectContent>
             </Select>
 
-            <Badge variant="outline" className="gap-1.5">
+            <Badge variant="outline" className="gap-1.5 border-border/70 bg-background">
               <CalendarDays className="h-3.5 w-3.5" />
               FY 2026
             </Badge>
@@ -187,7 +208,7 @@ export function DashboardWorkspace({
       {template === "executive" ? (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-            <Card className="border-border bg-card">
+            <Card className="border-border/70 bg-card/90 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle>Project Status</CardTitle>
                 <CardDescription>Distribution by current stage</CardDescription>
@@ -202,7 +223,7 @@ export function DashboardWorkspace({
               </CardContent>
             </Card>
 
-            <Card className="border-border bg-card">
+            <Card className="border-border/70 bg-card/90 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle>Revenue vs Expenses</CardTitle>
                 <CardDescription>Rolling 12-month trend</CardDescription>
@@ -222,7 +243,7 @@ export function DashboardWorkspace({
             </Card>
           </div>
 
-          <Card className="border-border bg-card">
+          <Card className="border-border/70 bg-card/90 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle>Project Health Matrix</CardTitle>
               <CardDescription>Schedule completion compared to budget burn</CardDescription>
@@ -247,7 +268,7 @@ export function DashboardWorkspace({
 
       {template === "delivery" ? (
         <div className="grid grid-cols-1 gap-4">
-          <Card className="border-border bg-card">
+          <Card className="border-border/70 bg-card/90 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle>Project Health Matrix</CardTitle>
               <CardDescription>Click a point to inspect source dataset references</CardDescription>
@@ -268,7 +289,7 @@ export function DashboardWorkspace({
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
+          <Card className="border-border/70 bg-card/90 shadow-sm">
             <CardHeader className="pb-0">
               <CardTitle>Project Register</CardTitle>
               <CardDescription>ERP-grade sortable register with budget/schedule status</CardDescription>
@@ -282,7 +303,7 @@ export function DashboardWorkspace({
 
       {template === "finance" ? (
         <div className="grid grid-cols-2 gap-4 max-xl:grid-cols-1">
-          <Card className="border-border bg-card xl:col-span-2">
+          <Card className="border-border/70 bg-card/90 shadow-sm xl:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle>Revenue vs Expenses</CardTitle>
               <CardDescription>Click a point to trace the ERP source references</CardDescription>
@@ -301,7 +322,7 @@ export function DashboardWorkspace({
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
+          <Card className="border-border/70 bg-card/90 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle>Project Status</CardTitle>
               <CardDescription>Execution portfolio split by stage</CardDescription>
@@ -316,7 +337,7 @@ export function DashboardWorkspace({
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
+          <Card className="border-border/70 bg-card/90 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle>Data Reference Intelligence</CardTitle>
               <CardDescription>Uploaded source linkage for clicked chart points</CardDescription>
@@ -329,7 +350,7 @@ export function DashboardWorkspace({
       ) : null}
 
       {template !== "finance" ? (
-        <Card className="border-border bg-card">
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-500" />

@@ -191,10 +191,14 @@ export default async function IntegrationsPage() {
               ))}
             </ul>
             <Button
-              disabled
-              className="w-full bg-muted text-muted-foreground hover:bg-muted"
+              asChild
+              variant="outline"
+              className="w-full border-sky-500/30 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 dark:text-sky-200"
             >
-              Coming Soon
+              <Link href="mailto:support@konstruq.com?subject=Sage%20Intacct%20Early%20Access">
+                Request Early Access
+                <ExternalLink className="h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>

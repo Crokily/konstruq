@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { DashboardWorkspace, type DatasetCategory, type DatasetSheetRef, type UploadedDatasetRef } from "@/components/dashboard/dashboard-workspace";
 import { db } from "@/lib/db";
 import { uploadedDatasets, users } from "@/lib/db/schema";
@@ -42,6 +42,15 @@ function normalizeSheets(value: unknown): DatasetSheetRef[] {
     .filter((sheet): sheet is DatasetSheetRef => sheet !== null);
 }
 
+function normalizeSheetsFromMeta(value: unknown): DatasetSheetRef[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return [];
+  }
+
+  const rawMeta = value as Record<string, unknown>;
+  return normalizeSheets(rawMeta.sheets);
+}
+
 function toIsoDate(value: Date | string): string {
   const parsedDate = value instanceof Date ? value : new Date(value);
 
@@ -78,7 +87,7 @@ export default async function DashboardPage() {
           id: uploadedDatasets.id,
           category: uploadedDatasets.category,
           fileName: uploadedDatasets.fileName,
-          sheets: uploadedDatasets.sheets,
+          meta: uploadedDatasets.meta,
           uploadedAt: uploadedDatasets.uploadedAt,
         })
         .from(uploadedDatasets)
@@ -87,7 +96,9 @@ export default async function DashboardPage() {
             eq(uploadedDatasets.userId, appUser.id),
             eq(uploadedDatasets.isActive, true)
           )
-        );
+        )
+        .orderBy(desc(uploadedDatasets.uploadedAt))
+        .limit(24);
 
       datasetReferences = rows
         .flatMap((row) => {
@@ -102,7 +113,7 @@ export default async function DashboardPage() {
               id: row.id,
               category,
               fileName: row.fileName,
-              sheets: normalizeSheets(row.sheets),
+              sheets: normalizeSheetsFromMeta(row.meta),
               uploadedAt: toIsoDate(row.uploadedAt),
             } satisfies UploadedDatasetRef,
           ];

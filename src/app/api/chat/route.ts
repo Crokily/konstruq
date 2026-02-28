@@ -6,9 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { uploadedDatasets, users } from "@/lib/db/schema";
+import { buildChartSelectionPolicyPrompt } from "@/lib/charting/policy";
 
-const MAX_DATA_TOKENS = 80_000;
+const MAX_DATA_TOKENS = 30_000;
 const PREVIEW_ROW_LIMIT = 20;
+const MAX_MESSAGE_COUNT = 16;
+const MAX_MESSAGES_TOKENS = 22_000;
+const MAX_SINGLE_MESSAGE_CHARS = 6_000;
 
 interface DatasetSheet {
   sheetName: string;
@@ -166,7 +170,10 @@ function buildDatasetsContext(datasets: DatasetContextItem[]): string {
   ].join("\n\n");
 }
 
-function buildSystemPrompt(datasets: DatasetContextItem[]): string {
+function buildSystemPrompt(
+  datasets: DatasetContextItem[],
+  userQuestion?: string,
+): string {
   const basePrompt = [
     "You are Konstruq AI, a construction data analysis assistant.",
     "You help construction professionals analyze project data including costs, schedules, earned value metrics, and financial performance.",
@@ -180,7 +187,7 @@ function buildSystemPrompt(datasets: DatasetContextItem[]): string {
     "- Use plain text for explanations.",
     "- Use ```chart code blocks for chart specs with this format:",
     "```chart",
-    '{"type":"bar|line|area|pie|scatter|stacked-bar|composed","title":"...","xAxisKey":"...","metrics":[{"key":"...","label":"...","color":"#hex"}],"data":[...]}',
+    '{"type":"bar|line|area|pie|scatter|stacked-bar|composed","title":"...","subtitle":"...","xAxisKey":"...","metrics":[{"key":"...","label":"...","color":"#hex"}],"sources":[{"fileName":"...","sheetName":"...","columns":["exactColumnA","exactColumnB"]}],"selection":{"domain":"construction|finance|healthcare|retail|general","intent":"composition|trend|ranking|distribution|relationship|deviation|forecast","rationale":"...","fallback":"..."},"data":[...]}',
     "```",
     "- Use ```table code blocks for tabular data:",
     "```table",
@@ -191,11 +198,168 @@ function buildSystemPrompt(datasets: DatasetContextItem[]): string {
     '{"items":[{"label":"...","value":"...","trend":"up|down|neutral","description":"..."}]}',
     "```",
     "- Choose the most appropriate visualization type based on the user question.",
+    "- The chart `selection` object must include domain, intent, rationale, and fallback.",
+    "- Every chart MUST include `sources` with exact fileName + sheetName + columns from uploaded datasets.",
+    "- Every `metrics[].key` and `xAxisKey` must appear in `sources.columns` exactly.",
+    "- If you cannot cite exact uploaded-file sources for a chart, DO NOT output a chart block; return text only.",
+    "- For percentage/share questions: use pie when categories <= 6, otherwise use sorted bar.",
+    "- For trend-over-time questions: use line/area.",
+    "- For comparison/ranking questions: use bar/column.",
+    "- Apply chart style spec: concise title, useful subtitle with scope/period, consistent series colors, readable axis labels, and avoid clutter.",
+    "- Avoid pie charts for dense categories; prefer sorted or stacked bars when readability is at risk.",
+    "- Charts are rendered with shadcn chart components; provide clean, valid fields so shadcn chart rendering works without manual correction.",
   ].join("\n");
 
-  return [basePrompt, outputFormatRules, buildDatasetsContext(datasets)].join(
+  const chartPolicy = buildChartSelectionPolicyPrompt(
+    datasets.map((dataset) => ({
+      category: dataset.category,
+      fileName: dataset.fileName,
+      sheets: dataset.sheets.map((sheet) => ({
+        sheetName: sheet.sheetName,
+        columns: sheet.columns,
+        rowCount: sheet.rowCount,
+      })),
+    })),
+    userQuestion,
+  );
+
+  return [basePrompt, outputFormatRules, chartPolicy, buildDatasetsContext(datasets)].join(
     "\n\n",
   );
+}
+
+function estimateTextTokens(value: string): number {
+  return Math.ceil(value.length / 4);
+}
+
+function compactMessageContent(raw: string): string {
+  const trimmed = raw.trim();
+
+  if (trimmed.length <= MAX_SINGLE_MESSAGE_CHARS) {
+    return trimmed;
+  }
+
+  const chartBlockMatches = [...trimmed.matchAll(/```chart[\s\S]*?```/g)];
+  if (chartBlockMatches.length > 0) {
+    const latestChartBlock = chartBlockMatches[chartBlockMatches.length - 1]?.[0] ?? "";
+    const prefix = trimmed.slice(0, Math.min(1_500, trimmed.length));
+    return `${prefix}\n\n[older content truncated for token budget]\n\n${latestChartBlock}`.slice(
+      0,
+      MAX_SINGLE_MESSAGE_CHARS,
+    );
+  }
+
+  return `${trimmed.slice(0, MAX_SINGLE_MESSAGE_CHARS)}\n\n[content truncated for token budget]`;
+}
+
+function normalizeMessageContent(
+  content: CoreMessage["content"],
+): string | null {
+  if (typeof content === "string") {
+    return compactMessageContent(content);
+  }
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((part) => {
+        if (
+          part &&
+          typeof part === "object" &&
+          "type" in part &&
+          part.type === "text" &&
+          "text" in part &&
+          typeof part.text === "string"
+        ) {
+          return part.text;
+        }
+
+        return "";
+      })
+      .join("\n")
+      .trim();
+
+    return text.length > 0 ? compactMessageContent(text) : null;
+  }
+
+  return null;
+}
+
+function budgetMessages(messages: CoreMessage[]): CoreMessage[] {
+  if (messages.length === 0) {
+    return [];
+  }
+
+  const recent = messages.slice(-MAX_MESSAGE_COUNT);
+  const budgeted: CoreMessage[] = [];
+  let usedTokens = 0;
+
+  // Keep newest messages first, then reverse at the end.
+  for (let index = recent.length - 1; index >= 0; index -= 1) {
+    const message = recent[index];
+
+    if (
+      message.role !== "system" &&
+      message.role !== "user" &&
+      message.role !== "assistant"
+    ) {
+      continue;
+    }
+
+    const normalizedContent = normalizeMessageContent(message.content);
+
+    if (!normalizedContent) {
+      continue;
+    }
+
+    const estimated = estimateTextTokens(normalizedContent);
+    if (usedTokens + estimated > MAX_MESSAGES_TOKENS) {
+      continue;
+    }
+
+    usedTokens += estimated;
+    budgeted.push({
+      role: message.role,
+      content: normalizedContent,
+    });
+  }
+
+  return budgeted.reverse();
+}
+
+function latestUserTextMessage(messages: CoreMessage[]): string | undefined {
+  const userMessages = messages.filter((message) => message.role === "user");
+  const last = userMessages[userMessages.length - 1];
+
+  if (!last) {
+    return undefined;
+  }
+
+  if (typeof last.content === "string") {
+    return last.content;
+  }
+
+  if (Array.isArray(last.content)) {
+    const textParts = last.content
+      .map((part) => {
+        if (
+          part &&
+          typeof part === "object" &&
+          "type" in part &&
+          part.type === "text" &&
+          "text" in part &&
+          typeof part.text === "string"
+        ) {
+          return part.text;
+        }
+
+        return "";
+      })
+      .filter((text) => text.length > 0);
+
+    return textParts.length > 0 ? textParts.join("\n") : undefined;
+  }
+
+  return undefined;
 }
 
 export async function POST(request: NextRequest) {
@@ -252,19 +416,28 @@ export async function POST(request: NextRequest) {
       messages?: CoreMessage[];
     };
 
+    const rawMessages = Array.isArray(body.messages)
+      ? (body.messages as CoreMessage[])
+      : [];
+    const messages = budgetMessages(rawMessages);
+    const question = latestUserTextMessage(messages);
+
     const result = streamText({
       model: mistral("mistral-large-latest"),
-      system: buildSystemPrompt(datasetContext),
-      messages: Array.isArray(body.messages)
-        ? (body.messages as CoreMessage[])
-        : [],
+      system: buildSystemPrompt(datasetContext, question),
+      messages,
     });
 
     return result.toDataStreamResponse();
   } catch (error) {
     console.error("Chat route failed:", error);
     return NextResponse.json(
-      { error: "Unable to process chat request right now" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to process chat request right now",
+      },
       { status: 500 },
     );
   }

@@ -1,5 +1,6 @@
 import { ProjectHealthScatter } from "@/components/charts/project-health-scatter";
 import { ProjectTable } from "@/components/charts/project-table";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   Card,
   CardContent,
@@ -18,14 +19,13 @@ export default async function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Projects</h1>
-        <p className="mt-1 text-muted-foreground">
-          All construction projects from Procore.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Portfolio"
+        title="Projects"
+        description="Enterprise project register with live health, budget, and schedule intelligence."
+      />
 
-      <Card className="border-border bg-card">
+      <Card className="border-border/70 bg-card/90 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle>Project Health Matrix</CardTitle>
           <CardDescription>
@@ -37,7 +37,7 @@ export default async function ProjectsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-border bg-card">
+      <Card className="border-border/70 bg-card/90 shadow-sm">
         <CardHeader className="pb-0">
           <CardTitle>Project List</CardTitle>
           <CardDescription>

@@ -5,7 +5,8 @@ import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChartFromSpec } from "@/components/chat/chart-from-spec";
-import type { ChartSpec, ChartSpecMetric } from "@/components/chat/chart-from-spec";
+import type { NormalizeChartSpecResult } from "@/lib/charting/spec";
+import { normalizeChartSpec } from "@/lib/charting/spec";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface MessageRendererProps {
@@ -85,39 +86,8 @@ function parseJson(raw: string): unknown | null {
   }
 }
 
-function parseChartSpec(raw: string): ChartSpec | null {
-  const parsed = parseJson(raw);
-
-  if (!isRecord(parsed)) {
-    return null;
-  }
-
-  const rawMetrics = Array.isArray(parsed.metrics) ? parsed.metrics : [];
-  const metrics = rawMetrics
-    .map((metric): ChartSpecMetric | null => {
-      if (!isRecord(metric) || typeof metric.key !== "string" || metric.key.trim().length === 0) {
-        return null;
-      }
-
-      return {
-        key: metric.key,
-        label: typeof metric.label === "string" && metric.label.trim().length > 0 ? metric.label : metric.key,
-        color: typeof metric.color === "string" ? metric.color : undefined,
-      };
-    })
-    .filter((metric): metric is ChartSpecMetric => metric !== null);
-
-  const data = Array.isArray(parsed.data)
-    ? parsed.data.filter((row): row is Record<string, unknown> => isRecord(row))
-    : [];
-
-  return {
-    type: typeof parsed.type === "string" ? (parsed.type as ChartSpec["type"]) : "bar",
-    title: typeof parsed.title === "string" ? parsed.title : "Chart",
-    xAxisKey: typeof parsed.xAxisKey === "string" ? parsed.xAxisKey : "name",
-    metrics,
-    data,
-  };
+function parseChartSpec(raw: string): NormalizeChartSpecResult | null {
+  return normalizeChartSpec(parseJson(raw));
 }
 
 function isNonEmptyStringArray(value: unknown): value is string[] {
@@ -207,6 +177,14 @@ function FallbackCodeBlock({ content }: { content: string }) {
   );
 }
 
+function InvalidChartBlock() {
+  return (
+    <div className="rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-3 text-xs text-amber-700 dark:text-amber-300">
+      Chart hidden: missing or invalid source references. Ask again and require source-linked chart output.
+    </div>
+  );
+}
+
 const markdownComponents: Components = {
   p: ({ children }) => <p className="text-sm leading-relaxed text-foreground">{children}</p>,
   a: ({ children, href }) => (
@@ -281,10 +259,10 @@ export function MessageRenderer({ content }: MessageRendererProps) {
         }
 
         if (segment.blockType === "chart") {
-          const parsedSpec = parseChartSpec(segment.content);
+          const parsedSpecResult = parseChartSpec(segment.content);
 
-          if (!parsedSpec) {
-            return <FallbackCodeBlock key={segment.key} content={segment.content} />;
+          if (!parsedSpecResult) {
+            return <InvalidChartBlock key={segment.key} />;
           }
 
           return (
@@ -292,7 +270,7 @@ export function MessageRenderer({ content }: MessageRendererProps) {
               key={segment.key}
               className="overflow-hidden rounded-xl border border-border bg-muted/30 p-3"
             >
-              <ChartFromSpec spec={parsedSpec} />
+              <ChartFromSpec spec={parsedSpecResult.spec} hints={parsedSpecResult.hints} warnings={parsedSpecResult.warnings} />
             </div>
           );
         }

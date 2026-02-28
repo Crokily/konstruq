@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -9,6 +10,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+export const metadata: Metadata = {
+  title: "Construction Analytics Platform",
+  description:
+    "Unify Procore project data and Sage Intacct financials into one construction analytics dashboard.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default async function LandingPage() {
   const { userId } = await auth();
