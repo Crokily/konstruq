@@ -14,3 +14,15 @@ Started: 2026-02-28
 - Styling: Tailwind v4 with tw-animate-css. Global styles in globals.css.
 
 ---
+
+## 2026-02-28 15:20 UTC - US-001: Add projects table and modify uploadedDatasets schema
+- Added `projects` table to schema.ts (id, userId, name, description, status, createdAt, updatedAt)
+- Added nullable `projectId` FK column to `uploadedDatasets`
+- Schema pushed to Neon via drizzle-kit push
+- Cleared all existing uploaded_datasets rows
+- Files changed: src/lib/db/schema.ts
+- **Learnings for future iterations:**
+  - Codex CLI uses config.toml for model/effort; do NOT append effort to model name in --model flag
+  - drizzle-kit push works directly (no migrations folder needed)
+  - projects table placed between syncedProjects and uploadedDatasets sections
+---

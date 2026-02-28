@@ -19,7 +19,7 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Use drizzle-kit push (not generate). DB is Neon Postgres. Schema file is src/lib/db/schema.ts. Env vars in .env.local. Also export the new table from schema.ts."
     },
     {
