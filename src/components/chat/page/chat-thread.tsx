@@ -4,6 +4,7 @@ import {
   type MessageWidgetAddRequest,
   type MessageWidgetAddState,
 } from "@/components/chat/message-renderer";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -22,6 +23,10 @@ interface ChatThreadProps {
   onSuggestionClick: (suggestion: string) => void;
   onAddWidget?: (widget: MessageWidgetAddRequest) => void | Promise<void>;
   getAddWidgetState?: (blockKey: string) => MessageWidgetAddState;
+  renderAddButton?: (
+    blockKey: string,
+    widget: MessageWidgetAddRequest,
+  ) => ReactNode;
 }
 
 export function ChatThread({
@@ -34,6 +39,7 @@ export function ChatThread({
   onSuggestionClick,
   onAddWidget,
   getAddWidgetState,
+  renderAddButton,
 }: ChatThreadProps) {
   if (messages.length === 0) {
     return (
@@ -84,6 +90,7 @@ export function ChatThread({
                       content={String(message.content)}
                       onAddWidget={onAddWidget}
                       getAddWidgetState={getAddWidgetState}
+                      renderAddButton={renderAddButton}
                     />
                   )}
                 </div>
