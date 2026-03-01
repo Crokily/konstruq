@@ -116,36 +116,40 @@ export function ChartBlock({ result, headerActions }: ChartBlockProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-muted/30 p-3">
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-        {headerActions}
-        {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 px-2.5 text-xs"
-              aria-label="Open chart in full screen"
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-              Full screen
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="h-[92vh] max-w-[96vw] p-4 pr-12 sm:max-w-[96vw]">
-            <DialogHeader className="flex flex-row items-start justify-between gap-3 pr-10 text-left">
-              <DialogTitle className="min-w-0 text-base">{result.spec.title}</DialogTitle>
-              {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
-            </DialogHeader>
-            <div className="h-[calc(92vh-5rem)] overflow-auto rounded-lg border border-border bg-background p-3">
-              <ChartTabsContent
-                result={result}
-                hints={fullScreenHints}
-                tableContainerClassName="max-h-[calc(92vh-14rem)]"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-h-8 items-center gap-2">
+          {headerActions}
+        </div>
+        <div className="flex items-center gap-2">
+          {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 px-2.5 text-xs"
+                aria-label="Open chart in full screen"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                Full screen
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="h-[92vh] max-w-[96vw] p-4 sm:max-w-[96vw]">
+              <DialogHeader className="flex flex-row items-start justify-between gap-2 text-left">
+                <DialogTitle className="text-base">{result.spec.title}</DialogTitle>
+                {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
+              </DialogHeader>
+              <div className="h-[calc(92vh-5rem)] overflow-auto rounded-lg border border-border bg-background p-3">
+                <ChartTabsContent
+                  result={result}
+                  hints={fullScreenHints}
+                  tableContainerClassName="max-h-[calc(92vh-14rem)]"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
       <ChartTabsContent result={result} hints={result.hints} />
     </div>

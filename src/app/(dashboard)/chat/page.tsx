@@ -4,6 +4,7 @@ import { MessageSquarePlus, Trash2 } from "lucide-react";
 import type { Message } from "ai";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AddToDashboardPicker } from "@/components/chat/add-to-dashboard-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useChatRuntime } from "@/components/chat/chat-runtime-provider";
 import { ChatComposer } from "@/components/chat/page/chat-composer";
@@ -11,6 +12,7 @@ import { ConversationSidebar } from "@/components/chat/page/conversation-sidebar
 import { ChatThread } from "@/components/chat/page/chat-thread";
 import { useConversationManager } from "@/components/chat/page/use-conversation-manager";
 import { SUGGESTION_PROMPTS } from "@/lib/chat/history";
+import { useAddToDashboard } from "@/lib/chat/use-add-to-dashboard";
 import { useChatProject } from "@/lib/chat/project-context";
 
 interface ProjectOption {
@@ -48,6 +50,17 @@ export default function ChatPage() {
     scrollContainerRef,
     switchConversation,
   } = useConversationManager({ messages, isLoading, setMessages });
+  const {
+    dashboards,
+    dashboardsError,
+    isDashboardsLoading,
+    fetchDashboards,
+    addToDashboard,
+    getWidgetState,
+  } = useAddToDashboard({
+    projectId,
+    resetKey: activeConversationId,
+  });
 
   useEffect(() => {
     let isCancelled = false;
@@ -201,6 +214,21 @@ export default function ChatPage() {
               suggestions={SUGGESTION_PROMPTS}
               loadingLabel={loadingLabel}
               onSuggestionClick={(suggestion) => void append({ role: "user", content: suggestion })}
+              renderAddButton={(blockKey, widget) => (
+                <AddToDashboardPicker
+                  state={getWidgetState(blockKey)}
+                  dashboards={dashboards}
+                  dashboardsError={dashboardsError}
+                  isDashboardsLoading={isDashboardsLoading}
+                  onOpen={fetchDashboards}
+                  onSelect={(dashboardId) => addToDashboard(widget, dashboardId)}
+                  className={
+                    widget.kind === "kpi"
+                      ? "mt-3 h-8 w-full justify-center gap-1.5 px-2.5 text-xs"
+                      : undefined
+                  }
+                />
+              )}
             />
             <div ref={messagesEndRef} />
           </div>

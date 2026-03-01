@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Check, Loader2, Plus } from "lucide-react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
@@ -15,6 +15,10 @@ interface MessageRendererProps {
   content: string;
   onAddWidget?: (widget: MessageWidgetAddRequest) => void | Promise<void>;
   getAddWidgetState?: (blockKey: string) => MessageWidgetAddState;
+  renderAddButton?: (
+    blockKey: string,
+    widget: MessageWidgetAddRequest,
+  ) => ReactNode;
 }
 
 type BlockType = "chart" | "table" | "kpi";
@@ -109,7 +113,11 @@ function parseJson(raw: string): unknown | null {
 }
 
 function parseChartSpec(raw: string): NormalizeChartSpecResult | null {
-  return normalizeChartSpec(parseJson(raw));
+  try {
+    return normalizeChartSpec(parseJson(raw));
+  } catch {
+    return null;
+  }
 }
 
 function isNonEmptyStringArray(value: unknown): value is string[] {
@@ -355,6 +363,7 @@ export function MessageRenderer({
   content,
   onAddWidget,
   getAddWidgetState,
+  renderAddButton,
 }: MessageRendererProps) {
   const segments = useMemo(() => parseSegments(content), [content]);
 
@@ -384,26 +393,26 @@ export function MessageRenderer({
 
           const blockKey = getAddWidgetBlockKey("chart", segment.content);
           const addWidgetState = getAddWidgetState?.(blockKey) ?? "idle";
+          const addWidgetRequest: MessageWidgetAddRequest = {
+            kind: "chart",
+            blockKey,
+            title: parsedSpecResult.spec.title,
+            spec: parsedSpecResult.spec,
+          };
+          const addButton = renderAddButton
+            ? renderAddButton(blockKey, addWidgetRequest)
+            : onAddWidget ? (
+                <AddToDashboardButton
+                  state={addWidgetState}
+                  onClick={() => void onAddWidget(addWidgetRequest)}
+                />
+              ) : null;
 
           return (
             <ChartBlock
               key={segment.key}
               result={parsedSpecResult}
-              headerActions={
-                onAddWidget ? (
-                  <AddToDashboardButton
-                    state={addWidgetState}
-                    onClick={() =>
-                      void onAddWidget({
-                        kind: "chart",
-                        blockKey,
-                        title: parsedSpecResult.spec.title,
-                        spec: parsedSpecResult.spec,
-                      })
-                    }
-                  />
-                ) : null
-              }
+              headerActions={addButton}
             />
           );
         }
@@ -462,6 +471,21 @@ export function MessageRenderer({
                 const trendInfo = getKpiTrendInfo(item.trend);
                 const blockKey = getAddWidgetBlockKey("kpi", segment.content, itemIndex);
                 const addWidgetState = getAddWidgetState?.(blockKey) ?? "idle";
+                const addWidgetRequest: MessageWidgetAddRequest = {
+                  kind: "kpi",
+                  blockKey,
+                  title: item.label,
+                  item,
+                };
+                const addButton = renderAddButton
+                  ? renderAddButton(blockKey, addWidgetRequest)
+                  : onAddWidget ? (
+                      <AddToDashboardButton
+                        state={addWidgetState}
+                        onClick={() => void onAddWidget(addWidgetRequest)}
+                        className="mt-3 h-8 w-full justify-center gap-1.5 px-2.5 text-xs"
+                      />
+                    ) : null;
 
                 return (
                   <div
@@ -480,20 +504,7 @@ export function MessageRenderer({
                     {item.description ? (
                       <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
                     ) : null}
-                    {onAddWidget ? (
-                      <AddToDashboardButton
-                        state={addWidgetState}
-                        onClick={() =>
-                          void onAddWidget({
-                            kind: "kpi",
-                            blockKey,
-                            title: item.label,
-                            item,
-                          })
-                        }
-                        className="mt-3 h-8 w-full justify-center gap-1.5 px-2.5 text-xs"
-                      />
-                    ) : null}
+                    {addButton}
                   </div>
                 );
               })}
