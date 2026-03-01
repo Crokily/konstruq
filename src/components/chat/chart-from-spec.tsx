@@ -291,9 +291,10 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
     return Math.max(max, text.length);
   }, 0);
   const yAxisCategoryWidth = Math.min(320, Math.max(140, longestLabelLength * 7));
-  const chartHeight = horizontalCategoryLayout
+  const baseChartHeight = horizontalCategoryLayout
     ? Math.max(renderHints.height, Math.min(700, data.length * 44 + 96))
     : renderHints.height;
+  const chartHeight = baseChartHeight + (renderHints.showLegend ? 36 : 0);
 
   const scatterSeries = metrics.map((metric, index) => ({
     key: metric.key,
@@ -337,8 +338,8 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
   }
 
   return (
-    <div className="w-full space-y-3">
-      <div className="space-y-1">
+    <div className="w-full space-y-5">
+      <div className="space-y-1.5">
         <h4 className="text-base font-semibold tracking-tight text-foreground">{title}</h4>
         {spec.subtitle ? <p className="text-xs text-muted-foreground">{spec.subtitle}</p> : null}
       </div>

@@ -315,7 +315,7 @@ function DashboardChartCard({ chart }: { chart: ChartSpec }) {
 
   return (
     <Card className="border-border bg-card py-0">
-      <CardHeader className="pb-4 pt-6">
+      <CardHeader className="pb-6 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle>{chart.title}</CardTitle>
@@ -337,7 +337,7 @@ function DashboardChartCard({ chart }: { chart: ChartSpec }) {
       </CardHeader>
       <CardContent className="pb-6">
         <Tabs defaultValue="chart" className="w-full">
-          <TabsList className="mb-3 h-8">
+          <TabsList className="mb-5 h-8">
             <TabsTrigger value="chart" className="text-xs">Chart</TabsTrigger>
             <TabsTrigger value="table" className="text-xs">Table</TabsTrigger>
           </TabsList>

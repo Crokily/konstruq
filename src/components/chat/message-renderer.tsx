@@ -227,10 +227,11 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        Adding...
+        <span className="hidden sm:inline">Adding...</span>
+        <span className="sm:hidden">Adding</span>
       </Button>
     );
   }
@@ -242,10 +243,11 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
       >
         <Check className="h-3.5 w-3.5" />
-        Added
+        <span className="hidden sm:inline">Added</span>
+        <span className="sm:hidden">Done</span>
       </Button>
     );
   }
@@ -257,9 +259,10 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
       >
-        Added ✓
+        <span className="hidden sm:inline">Added ✓</span>
+        <span className="sm:hidden">Added</span>
       </Button>
     );
   }
@@ -270,10 +273,11 @@ function AddToDashboardButton({
       size="sm"
       variant="outline"
       onClick={onClick}
-      className={className ?? "h-8 gap-1.5 px-2.5 text-xs"}
+      className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
     >
       <Plus className="h-3.5 w-3.5" />
-      Add to Dashboard
+      <span className="hidden sm:inline">Add to Dashboard</span>
+      <span className="sm:hidden">Add</span>
     </Button>
   );
 }
@@ -453,7 +457,7 @@ export function MessageRenderer({
           }
 
           return (
-            <div key={segment.key} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div key={segment.key} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {parsedSpec.items.map((item, itemIndex) => {
                 const trendInfo = getKpiTrendInfo(item.trend);
                 const blockKey = getAddWidgetBlockKey("kpi", segment.content, itemIndex);
@@ -467,7 +471,7 @@ export function MessageRenderer({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
-                        <p className="text-lg font-semibold text-foreground">{item.value}</p>
+                        <p className="break-words text-lg font-semibold text-foreground">{item.value}</p>
                       </div>
                       <span className={`pt-0.5 text-sm ${trendInfo.className}`} aria-hidden>
                         {trendInfo.symbol}

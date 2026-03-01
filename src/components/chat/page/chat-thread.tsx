@@ -65,7 +65,7 @@ export function ChatThread({
 
           return (
             <div key={message.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-              <div className={cn("space-y-1", isUser ? "max-w-[80%]" : "max-w-[90%]")}>
+              <div className={cn("space-y-1", isUser ? "max-w-[80%]" : "max-w-[96%] xl:max-w-[90%]")}>
                 <p className={cn("text-xs font-medium", isUser ? "text-right text-amber-500" : "text-muted-foreground")}>
                   {isUser ? "You" : "Konstruq AI"}
                 </p>

@@ -91,15 +91,15 @@ function ChartTabsContent({ result, hints, tableContainerClassName }: ChartTabsC
   const rows = Array.isArray(result.spec.data) ? result.spec.data : [];
 
   return (
-    <Tabs defaultValue="chart" className="w-full gap-3">
-      <TabsList>
+    <Tabs defaultValue="chart" className="w-full gap-4">
+      <TabsList className="mb-2">
         <TabsTrigger value="chart">Chart</TabsTrigger>
         <TabsTrigger value="table">Table</TabsTrigger>
       </TabsList>
-      <TabsContent value="chart" forceMount className="mt-0 data-[state=inactive]:hidden">
+      <TabsContent value="chart" forceMount className="mt-2 data-[state=inactive]:hidden">
         <ChartFromSpec spec={result.spec} hints={hints} warnings={result.warnings} />
       </TabsContent>
-      <TabsContent value="table" forceMount className="mt-0 data-[state=inactive]:hidden">
+      <TabsContent value="table" forceMount className="mt-2 data-[state=inactive]:hidden">
         <ChartDataTable columns={columns} data={rows} className={tableContainerClassName} rowKeyPrefix={result.spec.title} />
       </TabsContent>
     </Tabs>
@@ -116,7 +116,7 @@ export function ChartBlock({ result, headerActions }: ChartBlockProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-muted/30 p-3">
-      <div className="mb-2 flex items-center justify-end gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         {headerActions}
         {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
         <Dialog>
@@ -132,9 +132,9 @@ export function ChartBlock({ result, headerActions }: ChartBlockProps) {
               Full screen
             </Button>
           </DialogTrigger>
-          <DialogContent className="h-[92vh] max-w-[96vw] p-4 sm:max-w-[96vw]">
-            <DialogHeader className="flex flex-row items-start justify-between gap-2 text-left">
-              <DialogTitle className="text-base">{result.spec.title}</DialogTitle>
+          <DialogContent className="h-[92vh] max-w-[96vw] p-4 pr-12 sm:max-w-[96vw]">
+            <DialogHeader className="flex flex-row items-start justify-between gap-3 pr-10 text-left">
+              <DialogTitle className="min-w-0 text-base">{result.spec.title}</DialogTitle>
               {methodology ? <MethodologyPopoverButton methodology={methodology} /> : null}
             </DialogHeader>
             <div className="h-[calc(92vh-5rem)] overflow-auto rounded-lg border border-border bg-background p-3">
