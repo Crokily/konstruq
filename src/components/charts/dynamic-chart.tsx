@@ -27,6 +27,23 @@ const valueFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
   notation: "compact",
 });
+const MAX_RENDER_POINTS = 80;
+
+function compactChartRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  if (rows.length <= MAX_RENDER_POINTS) {
+    return rows;
+  }
+
+  const step = Math.ceil(rows.length / MAX_RENDER_POINTS);
+  const compacted = rows.filter((_, index) => index % step === 0);
+  const last = rows[rows.length - 1];
+
+  if (compacted[compacted.length - 1] !== last) {
+    compacted.push(last);
+  }
+
+  return compacted;
+}
 
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -155,7 +172,9 @@ function AxisChartFrame({ children }: { children: ReactNode }) {
 }
 
 export function DynamicChart({ chart }: { chart: ChartSpec }) {
-  if (chart.data.length === 0) {
+  const renderData = compactChartRows(chart.data);
+
+  if (renderData.length === 0) {
     return <ChartEmptyState message="No rows were available for this chart." />;
   }
 
@@ -172,15 +191,16 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={chart.data}
+              data={renderData}
               dataKey={valueKey}
               nameKey={nameKey}
               innerRadius={64}
               outerRadius={98}
               paddingAngle={4}
               stroke="none"
+              isAnimationActive={false}
             >
-              {chart.data.map((entry, index) => {
+              {renderData.map((entry, index) => {
                 const entryKey =
                   typeof entry[nameKey] === "string"
                     ? entry[nameKey]
@@ -211,7 +231,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
   if (!chart.xKey || !chart.yKeys || chart.yKeys.length === 0) {
     return <ChartEmptyState message="This chart is missing required axis keys." />;
   }
-  const yDomain = buildYAxisDomain(chart.data, chart.yKeys);
+  const yDomain = buildYAxisDomain(renderData, chart.yKeys);
 
   if (chart.type === "scatter") {
     const yKey = chart.yKeys[0];
@@ -234,7 +254,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
               axisLine={false}
             />
             <Tooltip content={<TooltipContent />} cursor={{ stroke: "var(--muted-foreground)" }} />
-            <Scatter data={chart.data} fill={chart.colors[0]} />
+            <Scatter data={renderData} fill={chart.colors[0]} isAnimationActive={false} />
           </ScatterChart>
         </ResponsiveContainer>
       </AxisChartFrame>
@@ -245,7 +265,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
     return (
       <AxisChartFrame>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chart.data} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
+          <BarChart data={renderData} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.8} />
             <XAxis dataKey={chart.xKey} tickLine={false} axisLine={false} tickMargin={10} minTickGap={18} />
             <YAxis tickLine={false} axisLine={false} tickFormatter={formatValue} domain={yDomain} />
@@ -261,6 +281,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
                 minPointSize={2}
                 activeBar={false}
                 stroke="none"
+                isAnimationActive={false}
               />
             ))}
           </BarChart>
@@ -273,7 +294,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
     return (
       <AxisChartFrame>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chart.data} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
+          <LineChart data={renderData} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.8} />
             <XAxis dataKey={chart.xKey} tickLine={false} axisLine={false} tickMargin={10} minTickGap={18} />
             <YAxis tickLine={false} axisLine={false} tickFormatter={formatValue} domain={yDomain} />
@@ -289,6 +310,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={{ r: 5 }}
+                isAnimationActive={false}
               />
             ))}
           </LineChart>
@@ -300,7 +322,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
   return (
     <AxisChartFrame>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chart.data} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
+        <AreaChart data={renderData} margin={{ top: 18, right: 16, bottom: 26, left: 8 }}>
           <defs>
             {chart.yKeys.map((key, index) => {
               const gradientId = `${chart.id}-${key}-gradient`;
@@ -340,6 +362,7 @@ export function DynamicChart({ chart }: { chart: ChartSpec }) {
                 strokeWidth={2.5}
                 fill={`url(#${gradientId})`}
                 fillOpacity={1}
+                isAnimationActive={false}
               />
             );
           })}

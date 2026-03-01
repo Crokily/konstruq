@@ -227,11 +227,11 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
+        className={className ?? "h-8 max-w-full min-w-0 gap-1.5 overflow-hidden px-2.5 text-xs"}
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        <span className="hidden sm:inline">Adding...</span>
-        <span className="sm:hidden">Adding</span>
+        <span className="hidden truncate lg:inline">Adding...</span>
+        <span className="truncate lg:hidden">Adding</span>
       </Button>
     );
   }
@@ -243,11 +243,11 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
+        className={className ?? "h-8 max-w-full min-w-0 gap-1.5 overflow-hidden px-2.5 text-xs"}
       >
         <Check className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Added</span>
-        <span className="sm:hidden">Done</span>
+        <span className="hidden truncate lg:inline">Added</span>
+        <span className="truncate lg:hidden">Done</span>
       </Button>
     );
   }
@@ -259,10 +259,10 @@ function AddToDashboardButton({
         size="sm"
         variant="outline"
         disabled
-        className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
+        className={className ?? "h-8 max-w-full min-w-0 gap-1.5 overflow-hidden px-2.5 text-xs"}
       >
-        <span className="hidden sm:inline">Added ✓</span>
-        <span className="sm:hidden">Added</span>
+        <span className="hidden truncate lg:inline">Added ✓</span>
+        <span className="truncate lg:hidden">Added</span>
       </Button>
     );
   }
@@ -273,11 +273,11 @@ function AddToDashboardButton({
       size="sm"
       variant="outline"
       onClick={onClick}
-      className={className ?? "h-8 max-w-full gap-1.5 px-3 text-xs"}
+      className={className ?? "h-8 max-w-full min-w-0 gap-1.5 overflow-hidden px-2.5 text-xs"}
     >
       <Plus className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Add to Dashboard</span>
-      <span className="sm:hidden">Add</span>
+      <span className="hidden truncate lg:inline">Add to Dashboard</span>
+      <span className="truncate lg:hidden">Add</span>
     </Button>
   );
 }

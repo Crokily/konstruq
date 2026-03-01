@@ -360,6 +360,10 @@ export function DashboardClient({
   projectId,
   variant,
 }: DashboardClientProps) {
+  const datasetIdsSignature = useMemo(
+    () => [...datasetIds].sort().join("|"),
+    [datasetIds],
+  );
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -417,7 +421,7 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, datasetIds, refreshKey]);
+  }, [cacheKey, datasetIdsSignature, refreshKey]);
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
   const groupedCharts = useMemo(() => {
