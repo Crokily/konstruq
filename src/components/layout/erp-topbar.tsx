@@ -8,10 +8,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const sections: Array<{ prefix: string; label: string; href: string }> = [
   { prefix: "/dashboard", label: "Dashboard", href: "/dashboard" },
-  { prefix: "/projects", label: "Projects", href: "/projects" },
-  { prefix: "/financials", label: "Financials", href: "/financials" },
-  { prefix: "/chat", label: "AI Assistant", href: "/chat" },
-  { prefix: "/data-sources", label: "Data Sources", href: "/data-sources" },
+  { prefix: "/projects", label: "Project", href: "/projects" },
+  { prefix: "/financials", label: "Financial", href: "/financials" },
+  { prefix: "/chat", label: "AI Chat", href: "/chat" },
+  { prefix: "/dashboards", label: "My Dashboard", href: "/dashboards" },
+  { prefix: "/data-sources", label: "Data Source", href: "/data-sources" },
   { prefix: "/integrations", label: "Integrations", href: "/integrations" },
   { prefix: "/settings", label: "Settings", href: "/settings" },
 ];
