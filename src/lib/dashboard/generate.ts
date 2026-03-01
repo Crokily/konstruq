@@ -15,6 +15,20 @@ const PREVIEW_ROW_LIMIT = 30;
 
 export type DashboardVariant = "executive" | "project-controls" | "financials";
 
+interface DatasetQueryFilter {
+  appUserId: string;
+  projectId?: string;
+}
+
+export interface DashboardDatasetVersionItem {
+  id: string;
+  uploadedAt: Date | string;
+}
+
+export interface DashboardDatasetContextItem extends DatasetContextItem {
+  uploadedAt: Date | string;
+}
+
 export class DashboardGenerationError extends Error {
   readonly status: number;
 
@@ -189,22 +203,23 @@ export const DASHBOARD_PROMPTS: Record<DashboardVariant, string> = {
   ].join("\n"),
 };
 
-export async function fetchUserDatasets(
-  appUserId: string,
-  projectId?: string,
-): Promise<DatasetContextItem[]> {
-  if (projectId) {
-    const ownedProject = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(and(eq(projects.id, projectId), eq(projects.userId, appUserId)))
-      .limit(1);
-
-    if (ownedProject.length === 0) {
-      throw new DashboardGenerationError("Project not found", 404);
-    }
+async function assertProjectAccess({ appUserId, projectId }: DatasetQueryFilter) {
+  if (!projectId) {
+    return;
   }
 
+  const ownedProject = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, appUserId)))
+    .limit(1);
+
+  if (ownedProject.length === 0) {
+    throw new DashboardGenerationError("Project not found", 404);
+  }
+}
+
+function buildDatasetConditions({ appUserId, projectId }: DatasetQueryFilter) {
   const conditions = [
     eq(uploadedDatasets.userId, appUserId),
     eq(uploadedDatasets.isActive, true),
@@ -214,12 +229,42 @@ export async function fetchUserDatasets(
     conditions.push(eq(uploadedDatasets.projectId, projectId));
   }
 
+  return conditions;
+}
+
+export async function fetchUserDatasetVersions({
+  appUserId,
+  projectId,
+}: DatasetQueryFilter): Promise<DashboardDatasetVersionItem[]> {
+  await assertProjectAccess({ appUserId, projectId });
+
+  const conditions = buildDatasetConditions({ appUserId, projectId });
+  const datasets = await db
+    .select({
+      id: uploadedDatasets.id,
+      uploadedAt: uploadedDatasets.uploadedAt,
+    })
+    .from(uploadedDatasets)
+    .where(and(...conditions))
+    .orderBy(desc(uploadedDatasets.uploadedAt));
+
+  return datasets;
+}
+
+export async function fetchUserDatasets(
+  appUserId: string,
+  projectId?: string,
+): Promise<DashboardDatasetContextItem[]> {
+  await assertProjectAccess({ appUserId, projectId });
+  const conditions = buildDatasetConditions({ appUserId, projectId });
+
   const datasets = await db
     .select({
       id: uploadedDatasets.id,
       category: uploadedDatasets.category,
       fileName: uploadedDatasets.fileName,
       sheets: uploadedDatasets.sheets,
+      uploadedAt: uploadedDatasets.uploadedAt,
     })
     .from(uploadedDatasets)
     .where(and(...conditions))
@@ -230,6 +275,7 @@ export async function fetchUserDatasets(
     category: dataset.category,
     fileName: dataset.fileName,
     sheets: normalizeSheets(dataset.sheets),
+    uploadedAt: dataset.uploadedAt,
   }));
 }
 

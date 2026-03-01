@@ -7,14 +7,18 @@ import {
   callDashboardLLM,
   DASHBOARD_PROMPTS,
   DashboardGenerationError,
+  fetchUserDatasetVersions,
   fetchUserDatasets,
   parseJsonResponse,
   type DashboardVariant,
 } from "@/lib/dashboard/generate";
 import {
   parseDashboardContent,
+  buildDashboardDataVersion,
+  buildDashboardCacheKey,
   type DashboardResponse,
 } from "@/lib/dashboard/types";
+import { getOrCreateDashboardServerCache, readDashboardServerCache } from "@/lib/dashboard/server-cache";
 
 function isDashboardVariant(value: string): value is DashboardVariant {
   return value in DASHBOARD_PROMPTS;
@@ -77,9 +81,9 @@ export async function POST(request: NextRequest) {
       // No body or invalid JSON means no project filter.
     }
 
-    const datasetContext = await fetchUserDatasets(appUserId, projectId);
+    const datasetVersions = await fetchUserDatasetVersions({ appUserId, projectId });
 
-    if (datasetContext.length === 0) {
+    if (datasetVersions.length === 0) {
       return NextResponse.json({
         datasetIds: [],
         kpis: [],
@@ -87,20 +91,38 @@ export async function POST(request: NextRequest) {
       } satisfies DashboardResponse);
     }
 
-    const systemPrompt = DASHBOARD_PROMPTS[variant];
-    const userPrompt = buildDashboardUserPrompt(datasetContext, variant);
-    const responseText = await callDashboardLLM(systemPrompt, userPrompt);
-    const parsed = parseDashboardContent(parseJsonResponse(responseText));
-
-    if (!parsed || parsed.charts.length === 0) {
-      throw new Error("AI response did not contain valid dashboard charts");
+    const serverCacheKey = [
+      appUserId,
+      buildDashboardCacheKey({
+        variant,
+        projectId,
+        dataVersion: buildDashboardDataVersion(datasetVersions),
+      }),
+    ].join("::");
+    const cachedResponse = readDashboardServerCache(serverCacheKey);
+    if (cachedResponse) {
+      return NextResponse.json(cachedResponse);
     }
 
-    return NextResponse.json({
-      datasetIds: datasetContext.map((dataset) => dataset.id),
-      kpis: parsed.kpis,
-      charts: parsed.charts,
-    } satisfies DashboardResponse);
+    const systemPrompt = DASHBOARD_PROMPTS[variant];
+    const responsePayload = await getOrCreateDashboardServerCache(serverCacheKey, async () => {
+      const datasetContext = await fetchUserDatasets(appUserId, projectId);
+      const userPrompt = buildDashboardUserPrompt(datasetContext, variant);
+      const responseText = await callDashboardLLM(systemPrompt, userPrompt);
+      const parsed = parseDashboardContent(parseJsonResponse(responseText));
+
+      if (!parsed || parsed.charts.length === 0) {
+        throw new Error("AI response did not contain valid dashboard charts");
+      }
+
+      return {
+        datasetIds: datasetContext.map((dataset) => dataset.id),
+        kpis: parsed.kpis,
+        charts: parsed.charts,
+      } satisfies DashboardResponse;
+    });
+
+    return NextResponse.json(responsePayload);
   } catch (error) {
     if (error instanceof DashboardGenerationError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

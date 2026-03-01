@@ -16,6 +16,7 @@ interface ChartSpecLike {
 }
 
 const numberFormatter = new Intl.NumberFormat();
+const MAX_TABLE_ROWS = 300;
 
 interface ChartDataTableProps {
   columns: string[];
@@ -114,6 +115,7 @@ export function ChartDataTable({
   const rows = Array.isArray(data)
     ? data.filter((row): row is Record<string, unknown> => isRecord(row))
     : [];
+  const visibleRows = rows.slice(0, MAX_TABLE_ROWS);
 
   if (normalizedColumns.length === 0) {
     return (
@@ -144,7 +146,7 @@ export function ChartDataTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row, rowIndex) => (
+          {visibleRows.map((row, rowIndex) => (
             <TableRow
               key={`${rowKeyPrefix}-row-${rowIndex}`}
               className="border-border hover:bg-muted/60"
@@ -168,6 +170,11 @@ export function ChartDataTable({
           ))}
         </TableBody>
       </Table>
+      {rows.length > MAX_TABLE_ROWS ? (
+        <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          Showing first {MAX_TABLE_ROWS.toLocaleString()} rows of {rows.length.toLocaleString()} for performance.
+        </p>
+      ) : null}
     </div>
   );
 }

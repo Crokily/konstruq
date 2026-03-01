@@ -52,6 +52,23 @@ const DEFAULT_HINTS: ChartRenderHints = {
   showLegend: true,
   height: 300,
 };
+const MAX_CHAT_CHART_POINTS = 90;
+
+function compactRows<T>(rows: T[]): T[] {
+  if (rows.length <= MAX_CHAT_CHART_POINTS) {
+    return rows;
+  }
+
+  const step = Math.ceil(rows.length / MAX_CHAT_CHART_POINTS);
+  const compacted = rows.filter((_, index) => index % step === 0);
+  const last = rows[rows.length - 1];
+
+  if (compacted[compacted.length - 1] !== last) {
+    compacted.push(last);
+  }
+
+  return compacted;
+}
 
 function wrapLabel(value: unknown): string[] {
   const text = typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -282,8 +299,8 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
     typeof spec.xAxisKey === "string" && spec.xAxisKey.trim().length > 0 ? spec.xAxisKey : "name";
   const chartType = resolveChartType(spec.type);
   const renderHints = hints ?? DEFAULT_HINTS;
-  const chartData = normalizeChartData(data, metrics);
-  const pieData = buildPieData(chartData, metrics, xAxisKey);
+  const chartData = compactRows(normalizeChartData(data, metrics));
+  const pieData = compactRows(buildPieData(chartData, metrics, xAxisKey));
   const horizontalCategoryLayout = shouldUseHorizontalCategoryLayout(chartType, chartData, xAxisKey);
   const longestLabelLength = chartData.reduce((max, row) => {
     const value = row[xAxisKey];
@@ -291,9 +308,10 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
     return Math.max(max, text.length);
   }, 0);
   const yAxisCategoryWidth = Math.min(320, Math.max(140, longestLabelLength * 7));
-  const chartHeight = horizontalCategoryLayout
+  const baseChartHeight = horizontalCategoryLayout
     ? Math.max(renderHints.height, Math.min(700, data.length * 44 + 96))
     : renderHints.height;
+  const chartHeight = baseChartHeight + (renderHints.showLegend ? 36 : 0);
 
   const scatterSeries = metrics.map((metric, index) => ({
     key: metric.key,
@@ -337,8 +355,8 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
   }
 
   return (
-    <div className="w-full space-y-3">
-      <div className="space-y-1">
+    <div className="w-full space-y-5">
+      <div className="space-y-1.5">
         <h4 className="text-base font-semibold tracking-tight text-foreground">{title}</h4>
         {spec.subtitle ? <p className="text-xs text-muted-foreground">{spec.subtitle}</p> : null}
       </div>
@@ -381,6 +399,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
+                isAnimationActive={false}
               />
             ))}
           </LineChart>
@@ -412,6 +431,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 fill={getMetricColor(metric, index)}
                 fillOpacity={0.3}
                 strokeWidth={2}
+                isAnimationActive={false}
               />
             ))}
           </AreaChart>
@@ -422,7 +442,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             <PieChart accessibilityLayer margin={CHART_STYLE_SPEC.chartMargin}>
             <ChartTooltip content={<ChartTooltipContent />} />
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
-            <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100}>
+            <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100} isAnimationActive={false}>
               {pieData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={CHART_STYLE_SPEC.palette[index % CHART_STYLE_SPEC.palette.length]} stroke="none" />
               ))}
@@ -445,10 +465,10 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
             {renderHints.showLegend ? <ChartLegend content={<ChartLegendContent />} /> : null}
             {hasScatterData ? (
               scatterSeries.map((series) => (
-                <Scatter key={series.key} name={series.label} data={series.data} fill={series.color} />
+                <Scatter key={series.key} name={series.label} data={series.data} fill={series.color} isAnimationActive={false} />
               ))
             ) : (
-              <Scatter name="No data" data={[]} fill={CHART_STYLE_SPEC.palette[0]} />
+              <Scatter name="No data" data={[]} fill={CHART_STYLE_SPEC.palette[0]} isAnimationActive={false} />
             )}
           </ScatterChart>
         ) : chartType === "stacked-bar" ? (
@@ -500,6 +520,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 activeBar={false}
                 stroke="none"
                 radius={horizontalCategoryLayout ? [0, 4, 4, 0] : [4, 4, 0, 0]}
+                isAnimationActive={false}
               />
             ))}
           </BarChart>
@@ -531,6 +552,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                   activeBar={false}
                   stroke="none"
                   radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
                 />
               ) : (
                 <Line
@@ -541,6 +563,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                   stroke={getMetricColor(metric, index)}
                   strokeWidth={2}
                   dot={false}
+                  isAnimationActive={false}
                 />
               ),
             )}
@@ -593,6 +616,7 @@ export function ChartFromSpec({ spec, hints, warnings }: ChartFromSpecProps) {
                 activeBar={false}
                 stroke="none"
                 radius={horizontalCategoryLayout ? [0, 4, 4, 0] : [4, 4, 0, 0]}
+                isAnimationActive={false}
               />
             ))}
           </BarChart>

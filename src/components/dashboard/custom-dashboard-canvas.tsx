@@ -578,7 +578,7 @@ function AssistantSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full gap-0 p-0 sm:max-w-[400px]"
+        className="w-full gap-0 p-0 sm:max-w-[520px] xl:max-w-[560px]"
       >
         <SheetHeader className="border-b border-border/70 bg-card px-6 py-5 text-left">
           <SheetTitle className="flex items-center gap-2 text-base">

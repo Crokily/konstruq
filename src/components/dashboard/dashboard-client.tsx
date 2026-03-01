@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
 } from "react";
 import { AlertTriangle, Info, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
@@ -316,7 +315,7 @@ function DashboardChartCard({ chart }: { chart: ChartSpec }) {
 
   return (
     <Card className="border-border bg-card py-0">
-      <CardHeader className="pb-4 pt-6">
+      <CardHeader className="pb-6 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle>{chart.title}</CardTitle>
@@ -338,7 +337,7 @@ function DashboardChartCard({ chart }: { chart: ChartSpec }) {
       </CardHeader>
       <CardContent className="pb-6">
         <Tabs defaultValue="chart" className="w-full">
-          <TabsList className="mb-3 h-8">
+          <TabsList className="mb-5 h-8">
             <TabsTrigger value="chart" className="text-xs">Chart</TabsTrigger>
             <TabsTrigger value="table" className="text-xs">Table</TabsTrigger>
           </TabsList>
@@ -361,11 +360,15 @@ export function DashboardClient({
   projectId,
   variant,
 }: DashboardClientProps) {
+  const datasetIdsSignature = useMemo(
+    () => [...datasetIds].sort().join("|"),
+    [datasetIds],
+  );
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
   const requestIdRef = useRef(0);
 
   const loadDashboard = useEffectEvent(async ({ force }: { force: boolean }) => {
@@ -386,8 +389,11 @@ export function DashboardClient({
       }
     }
 
-    setStatus("loading");
+    if (!dashboard) {
+      setStatus("loading");
+    }
     setMessage("");
+    setIsRefreshing(true);
 
     try {
       const nextDashboard = await requestDashboard(cacheKey, projectId, variant);
@@ -406,22 +412,18 @@ export function DashboardClient({
 
       setMessage(errorMessage(error));
       setStatus("error");
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsRefreshing(false);
+      }
     }
   });
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, datasetIds, refreshKey]);
-
-  function handleRefresh() {
-    clearCacheEntry(cacheKey);
-    startTransition(() => {
-      setRefreshKey((current) => current + 1);
-    });
-  }
+  }, [cacheKey, datasetIdsSignature, refreshKey]);
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
-  const controlsDisabled = status === "loading" || isPending;
   const groupedCharts = useMemo(() => {
     if (!dashboard) {
       return [] as Array<[string, DashboardResponse["charts"]]>;
@@ -455,7 +457,7 @@ export function DashboardClient({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-4">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-medium tracking-[0.16em] text-cyan-300 uppercase">
             <Sparkles className="h-3.5 w-3.5" />
@@ -467,35 +469,22 @@ export function DashboardClient({
             </h1>
             <p className="mt-1 text-muted-foreground">
               Your dashboard is generated from {datasetIds.length} active dataset
-              {datasetIds.length === 1 ? "" : "s"} and cached locally for faster reloads.
+              {datasetIds.length === 1 ? "" : "s"} 
             </p>
           </div>
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={controlsDisabled}
-          className="self-start"
-        >
-          <RefreshCw
-            className={cn(
-              "h-4 w-4",
-              controlsDisabled ? "animate-spin" : "",
-            )}
-          />
-          Refresh
-        </Button>
       </div>
 
-      {status === "loading" ? <PageLoading label="Loading dashboard" /> : null}
+      {status === "loading" && !dashboard ? <PageLoading label="Loading dashboard" /> : null}
 
       {status === "error" ? (
         <DashboardError
           message={message}
-          onRetry={handleRefresh}
-          isPending={isPending}
+          onRetry={() => {
+            clearCacheEntry(cacheKey);
+            setRefreshKey((current) => current + 1);
+          }}
+          isPending={isRefreshing}
         />
       ) : null}
 
