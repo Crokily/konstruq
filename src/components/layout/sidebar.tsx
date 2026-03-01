@@ -24,17 +24,12 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Projects",
+    label: "Project",
     href: "/projects",
     icon: FolderKanban,
   },
   {
-    label: "My Dashboards",
-    href: "/dashboards",
-    icon: LayoutGrid,
-  },
-  {
-    label: "Financials",
+    label: "Financial",
     href: "/financials",
     icon: DollarSign,
   },
@@ -44,7 +39,12 @@ const navItems = [
     icon: MessageSquare,
   },
   {
-    label: "Data Sources",
+    label: "My Dashboard",
+    href: "/dashboards",
+    icon: LayoutGrid,
+  },
+  {
+    label: "Data Source",
     href: "/data-sources",
     icon: Database,
   },
@@ -83,7 +83,9 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-lg font-semibold tracking-tight">Konstruq</p>
-            <p className="text-xs text-muted-foreground">Construction ERP Suite</p>
+            <p className="text-xs text-muted-foreground">
+              Konstruq - Construction analytic (ERP &amp; PMS)
+            </p>
           </div>
         </div>
       </div>
