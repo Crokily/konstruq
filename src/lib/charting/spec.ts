@@ -82,6 +82,22 @@ const SUPPORTED_CHART_TYPES: Set<SupportedChartType> = new Set([
   "stacked-bar",
   "composed",
 ]);
+const SUPPORTED_ANALYTICS_DOMAINS: Set<AnalyticsDomain> = new Set([
+  "construction",
+  "finance",
+  "healthcare",
+  "retail",
+  "general",
+]);
+const SUPPORTED_CHART_INTENTS: Set<ChartIntent> = new Set([
+  "composition",
+  "trend",
+  "ranking",
+  "distribution",
+  "relationship",
+  "deviation",
+  "forecast",
+]);
 
 const PIE_MAX_CATEGORIES = 6;
 const CATEGORY_LIMIT = 12;
@@ -156,12 +172,20 @@ function normalizeSelection(raw: unknown): ChartSelectionMetadata | undefined {
     return undefined;
   }
 
-  const domain = typeof raw.domain === "string" ? raw.domain : undefined;
-  const intent = typeof raw.intent === "string" ? raw.intent : undefined;
+  const domain =
+    typeof raw.domain === "string" &&
+    SUPPORTED_ANALYTICS_DOMAINS.has(raw.domain as AnalyticsDomain)
+      ? (raw.domain as AnalyticsDomain)
+      : undefined;
+  const intent =
+    typeof raw.intent === "string" &&
+    SUPPORTED_CHART_INTENTS.has(raw.intent as ChartIntent)
+      ? (raw.intent as ChartIntent)
+      : undefined;
 
   return {
-    domain: domain as AnalyticsDomain | undefined,
-    intent: intent as ChartIntent | undefined,
+    domain,
+    intent,
     rationale: typeof raw.rationale === "string" ? raw.rationale : undefined,
     fallback: typeof raw.fallback === "string" ? raw.fallback : undefined,
   };
@@ -252,10 +276,16 @@ function inferSpecDataShape(spec: ChartSpec): DataShape {
 }
 
 function enforceIntentRecommendation(spec: ChartSpec, warnings: string[]): ChartSpec {
-  const inferredIntent =
-    spec.selection?.intent ??
-    inferIntentFromQuestion(`${spec.title} ${spec.subtitle ?? ""}`.trim());
-  const inferredDomain = spec.selection?.domain ?? "construction";
+  const inferredIntent = SUPPORTED_CHART_INTENTS.has(
+    spec.selection?.intent as ChartIntent,
+  )
+    ? (spec.selection?.intent as ChartIntent)
+    : inferIntentFromQuestion(`${spec.title} ${spec.subtitle ?? ""}`.trim());
+  const inferredDomain = SUPPORTED_ANALYTICS_DOMAINS.has(
+    spec.selection?.domain as AnalyticsDomain,
+  )
+    ? (spec.selection?.domain as AnalyticsDomain)
+    : "construction";
 
   const recommendation = recommendChartType({
     domain: inferredDomain,
@@ -264,8 +294,10 @@ function enforceIntentRecommendation(spec: ChartSpec, warnings: string[]): Chart
     categoryCount: spec.data.length,
     metricCount: spec.metrics.length,
   });
+  const equivalentTypes =
+    TYPE_EQUIVALENCE[inferredIntent] ?? TYPE_EQUIVALENCE.ranking;
 
-  if (TYPE_EQUIVALENCE[inferredIntent].includes(spec.type)) {
+  if (equivalentTypes.includes(spec.type)) {
     return {
       ...spec,
       selection: {

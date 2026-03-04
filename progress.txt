@@ -12,7 +12,7 @@ Started: 2026-02-28
 - Data: uploadedDatasets stores parsed CSV/XLSX rows as JSONB in sheets column.
 - Env vars: .env.local (DATABASE_URL, MISTRAL_API_KEY, CLERK_SECRET_KEY etc.)
 - Styling: Tailwind v4 with tw-animate-css. Global styles in globals.css.
- 
+  
 ---
 
 ## 2026-02-28 15:20 UTC - US-001: Add projects table and modify uploadedDatasets schema
