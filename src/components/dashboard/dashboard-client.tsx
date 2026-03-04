@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  memo,
   useEffect,
   useEffectEvent,
   useMemo,
@@ -210,7 +211,7 @@ async function requestDashboard(
   }
 }
 
-function DynamicKPICard({
+const DynamicKPICard = memo(function DynamicKPICard({
   item,
   index,
 }: {
@@ -244,7 +245,7 @@ function DynamicKPICard({
       </CardContent>
     </Card>
   );
-}
+});
 
 function DashboardError({
   message,
@@ -310,7 +311,7 @@ function MethodologyPopover({ chart }: { chart: ChartSpec }) {
   );
 }
 
-function DashboardChartCard({ chart }: { chart: ChartSpec }) {
+const DashboardChartCard = memo(function DashboardChartCard({ chart }: { chart: ChartSpec }) {
   const columns = getChartDataTableColumns(chart);
 
   return (
@@ -351,7 +352,7 @@ function DashboardChartCard({ chart }: { chart: ChartSpec }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 export function DashboardClient({
   datasetIds,
@@ -360,10 +361,6 @@ export function DashboardClient({
   projectId,
   variant,
 }: DashboardClientProps) {
-  const datasetIdsSignature = useMemo(
-    () => [...datasetIds].sort().join("|"),
-    [datasetIds],
-  );
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -421,7 +418,7 @@ export function DashboardClient({
 
   useEffect(() => {
     void loadDashboard({ force: refreshKey > 0 });
-  }, [cacheKey, datasetIdsSignature, refreshKey]);
+  }, [cacheKey, refreshKey]);
 
   const welcomeName = firstName?.trim() ? firstName.trim() : "there";
   const groupedCharts = useMemo(() => {

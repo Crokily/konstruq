@@ -16,16 +16,21 @@ const geistMono = Geist_Mono({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://konstruq.com";
+const defaultTitle = "Konstruq - Construction analytic (ERP & PMS)";
+const defaultDescription =
+  "AI-powered construction analytics and project controls platform for ERP and PMS teams. Integrates Procore and Sage Intacct.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Konstruq — Construction Analytics Dashboard",
+    default: defaultTitle,
     template: "%s | Konstruq",
   },
-  description:
-    "AI-powered data analytics for the construction industry. Integrates Procore and Sage Intacct.",
+  description: defaultDescription,
   applicationName: "Konstruq",
+  creator: "Konstruq",
+  publisher: "Konstruq",
+  category: "Construction Analytics",
   keywords: [
     "construction analytics",
     "EVM dashboard",
@@ -42,20 +47,48 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "Konstruq",
-    title: "Konstruq — Construction Analytics Dashboard",
-    description:
-      "AI-powered construction analytics for schedule, cost, and portfolio performance.",
+    locale: "en_US",
+    title: defaultTitle,
+    description: defaultDescription,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Konstruq — Construction Analytics Dashboard",
-    description:
-      "AI-powered construction analytics for schedule, cost, and portfolio performance.",
+    title: defaultTitle,
+    description: defaultDescription,
   },
   robots: {
     index: true,
     follow: true,
   },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Konstruq",
+  url: siteUrl,
+  description: defaultDescription,
+  industry: "Construction Technology",
+};
+
+const softwareSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Konstruq",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  description: defaultDescription,
+  url: siteUrl,
 };
 
 export default function RootLayout({
@@ -69,6 +102,18 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         >
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(organizationSchema),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(softwareSchema),
+            }}
+          />
           <ThemeProvider>
             <TooltipProvider>{children}</TooltipProvider>
           </ThemeProvider>

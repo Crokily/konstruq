@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   BarChart3,
@@ -12,20 +10,15 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "Construction Analytics Platform",
+  title: "Konstruq - Construction analytic (ERP & PMS)",
   description:
-    "Unify Procore project data and Sage Intacct financials into one construction analytics dashboard.",
+    "Unify Procore project data and Sage Intacct financials into one construction analytics platform for ERP and PMS teams.",
   alternates: {
     canonical: "/",
   },
 };
 
-export default async function LandingPage() {
-  const { userId } = await auth();
-  if (userId) {
-    redirect("/dashboard");
-  }
-
+export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
